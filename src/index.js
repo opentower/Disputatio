@@ -30,6 +30,8 @@ class Graph extends HTMLElement {
         input.style.border = 'none'
         input.style.margin = '0px'
         input.style.padding = '0px'
+        bg.style.background = 'white'
+        bg.style.top = 0
         bg.style.left = 0
         bg.style.height = '100%'
         bg.style.width = '100%'
@@ -37,6 +39,9 @@ class Graph extends HTMLElement {
         this.appendChild(elt);
         elt.appendChild(input);
         elt.appendChild(bg);
+        input.addEventListener('focusout', _ =>
+            { if (input.value == "") this.removeChild(elt) 
+            })
         new PlainDraggable(elt, {left:x, top:y, handle:bg});
         input.focus()
     }
