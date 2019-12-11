@@ -27,9 +27,9 @@ class Graph extends HTMLElement {
         bg.style.display = 'inline-block'
         bg.style.position = 'absolute'
         input.style.position = 'relative'
+        input.cols = 5
+        input.rows = 1
         input.style.border = 'none'
-        input.style.margin = '0px'
-        input.style.padding = '0px'
         bg.style.background = 'white'
         bg.style.top = 0
         bg.style.left = 0
@@ -39,9 +39,7 @@ class Graph extends HTMLElement {
         this.appendChild(elt);
         elt.appendChild(input);
         elt.appendChild(bg);
-        input.addEventListener('focusout', _ =>
-            { if (input.value == "") this.removeChild(elt) 
-            })
+        input.addEventListener('focusout', _ => { if (input.value == "") this.removeChild(elt) })
         new PlainDraggable(elt, {left:x, top:y, handle:bg});
         input.focus()
     }
