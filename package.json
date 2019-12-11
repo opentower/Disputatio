@@ -1,0 +1,27 @@
+{
+  "name": "disputatio",
+  "version": "0.1.0",
+  "description": "Web Components for Argument Mapping",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack --progress --mode=production",
+    "watch": "webpack --progress --watch"
+  },
+  "author": "Graham Leach-Krouse",
+  "license": "MIT",
+  "devDependencies": {
+    "script-loader": "^0.7.2",
+    "skeleton-loader": "^2.0.0",
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.10"
+  },
+  "dependencies": {
+    "anim-event": "^1.0.16",
+    "cssprefix": "^2.0.16",
+    "leader-line": "^1.0.5",
+    "m-class-list": "^1.1.9",
+    "plain-draggable": "^2.5.12",
+    "pointer-event": "^1.0.0"
+  }
+}
