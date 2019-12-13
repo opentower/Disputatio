@@ -39,6 +39,7 @@ class GraphNode extends HTMLElement {
             left:x, 
             top:y, 
             handle:bg,
+            onMove: _ => this.redrawEdges()
         });
         input.focus()
     }
@@ -49,7 +50,6 @@ class GraphNode extends HTMLElement {
     redrawEdges() { 
         for (var key in this.edges) {
             this.edges[key].position()
-            console.log(this.edges)
         }
     }
 }
@@ -77,7 +77,10 @@ class Graph extends HTMLElement {
         )
     }
 
-    createNode(x,y) { new GraphNode(this,x,y); }
+    createNode(x,y) { 
+        let node = new GraphNode(this,x,y); 
+        this.focalNode = node
+    }
 
     createEdge(n1,n2) {
         let line = new LeaderLine(n1, n2)
