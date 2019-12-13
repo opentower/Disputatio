@@ -5,6 +5,7 @@ var draggable = require('plain_draggable')
 class GraphNode extends HTMLElement {
     constructor(parent,x,y) {
         super();
+        this.graph = parent
         this.uuid = Math.random().toString(36).substring(2) //generate unique identifier
         this.edges = {} //initialize table of edges
         let bg = document.createElement("div");
@@ -39,11 +40,17 @@ class GraphNode extends HTMLElement {
             left:x, 
             top:y, 
             handle:bg,
-            onMove: _ => this.redrawEdges()
+            onMove: _ => this.redrawEdges(),
+            onDrag: _ => input.focus(), //refocus, clean up empty nodes
         });
         input.focus()
     }
-    detach() { this.parentNode.removeChild(this); }
+    detach() { 
+        this.parentNode.removeChild(this); 
+        for (var key in this.edges) {
+            this.graph.removeEdge(this,this.graph.nodes[key])
+        }
+    }
 
     attach(parent) { parent.appendChild(this); }
 
@@ -58,6 +65,7 @@ class Graph extends HTMLElement {
     constructor() {
         super();
 
+        this.nodes = {} //initialize table of nodes
         this.focalNode //initialize focal node
         this.style.display = 'inline-block'
         this.style.outline = '1px solid'
@@ -80,6 +88,7 @@ class Graph extends HTMLElement {
     createNode(x,y) { 
         let node = new GraphNode(this,x,y); 
         this.focalNode = node
+        this.nodes[node.uuid] = node
     }
 
     createEdge(n1,n2) {
