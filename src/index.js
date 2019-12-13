@@ -66,7 +66,7 @@ class Graph extends HTMLElement {
         this.addEventListener('click',e => 
             {   if (e.target == this) {
                 this.createNode(e.clientX,e.clientY)
-                } else if (e.target.graphNode && e.shiftKey && e.ctrlKey) {
+                } else if (e.target.graphNode && e.shiftKey && e.target.graphNode.uuid in this.focalNode.edges) {
                     this.removeEdge(this.focalNode,e.target.graphNode)
                 } else if (e.target.graphNode && e.shiftKey) {
                     this.createEdge(this.focalNode,e.target.graphNode)
