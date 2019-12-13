@@ -5,7 +5,8 @@ var draggable = require('plain_draggable')
 class GraphNode extends HTMLElement {
     constructor(parent,x,y) {
         super();
-        this.edges = [] //initialize array of edges
+        this.uuid = Math.random().toString(36).substring(2) //generate unique identifier
+        this.edges = {} //initialize table of edges
         let bg = document.createElement("div");
         let input = document.createElement("textarea");
         this.style.position = 'absolute'
@@ -45,7 +46,12 @@ class GraphNode extends HTMLElement {
 
     attach(parent) { parent.appendChild(this); }
 
-    redrawEdges() { this.edges.forEach(l => l.position()) }
+    redrawEdges() { 
+        for (var key in this.edges) {
+            this.edges[key].position()
+            console.log(this.edges)
+        }
+    }
 }
 
 class Graph extends HTMLElement {
@@ -60,10 +66,10 @@ class Graph extends HTMLElement {
         this.addEventListener('click',e => 
             {   if (e.target == this) {
                 this.createNode(e.clientX,e.clientY)
+                } else if (e.target.graphNode && e.shiftKey && e.ctrlKey) {
+                    this.removeEdge(this.focalNode,e.target.graphNode)
                 } else if (e.target.graphNode && e.shiftKey) {
-                    let line = new LeaderLine(this.focalNode, e.target.graphNode)
-                    this.focalNode.edges.push(line)
-                    e.target.graphNode.edges.push(line)
+                    this.createEdge(this.focalNode,e.target.graphNode)
                 } else if (e.target.graphNode) {
                     this.focalNode = e.target.graphNode
                 }
@@ -72,6 +78,18 @@ class Graph extends HTMLElement {
     }
 
     createNode(x,y) { new GraphNode(this,x,y); }
+
+    createEdge(n1,n2) {
+        let line = new LeaderLine(n1, n2)
+        n1.edges[n2.uuid] = line
+        n2.edges[n1.uuid] = line
+    }
+
+    removeEdge(n1,n2) {
+        n1.edges[n2.uuid].remove()
+        delete n1.edges[n2.uuid]
+        delete n2.edges[n1.uuid]
+    }
 }
 
 customElements.define('wc-graph', Graph);
