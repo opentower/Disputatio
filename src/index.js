@@ -28,16 +28,16 @@ class GraphNode extends HTMLElement {
         input.style.zIndex = 5;
         this.appendChild(input);
         this.appendChild(bg);
-
-        this.observer = new MutationObserver(_ => this.redrawEdges)
-        this.observer.observe(input, {attributes: true})
         input.addEventListener('focusout', _ => { if (input.value == "") this.detach() })
+        // The below isn't maximally efficient, but it does handle resize well.
+        this.addEventListener('mousemove', e => { 
+            if (e.buttons != 0) this.redrawEdges()
+        }) 
         this.attach(parent)
         new PlainDraggable(this, {
             left:x, 
             top:y, 
             handle:bg,
-            onMove: _ => this.redrawEdges()
         });
         input.focus()
     }
