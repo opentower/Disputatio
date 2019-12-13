@@ -45,14 +45,18 @@ class GraphNode extends HTMLElement {
         });
         input.focus()
     }
+
     detach() { 
         this.parentNode.removeChild(this); 
         for (var key in this.edges) {
             this.graph.removeEdge(this,this.graph.nodes[key])
         }
+        delete this.graph.nodes[this.uuid]
     }
 
-    attach(parent) { parent.appendChild(this); }
+    attach(parent) { 
+        parent.appendChild(this); 
+    }
 
     redrawEdges() { 
         for (var key in this.edges) {
