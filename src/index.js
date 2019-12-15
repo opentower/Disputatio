@@ -160,7 +160,27 @@ class GraphNodeCluster extends GraphNode {
         node.style.transform = "none"
         this.nodes[node.uuid] = node
         node.cluster = this
-        node.dragger.remove()
+        node.dragger.top = 0
+        node.dragger.left = 0
+        node.dragger.onDragEnd = _ => { 
+            if (node.dragger.left < this.getBoundingClientRect().width 
+             && node.dragger.top < this.getBoundingClientRect().height) {
+                this.addNode(node) 
+            } else {
+                this.removeNode(node)
+                this.graph.focalNode = node
+            }
+        }
+    }
+
+    removeNode(node) {
+        this.graph.appendChild(node) //reattach to graph
+        node.dragger.top = this.dragger.top + node.dragger.top + 2 //reposition
+        node.dragger.left = this.dragger.left + node.dragger.left + 2
+        node.style.position = "absolute"
+        node.cluster = null
+        delete this.nodes[node.uuid] //delete from node list
+        node.dragger.onDragEnd = null
     }
 
 }
