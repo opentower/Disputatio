@@ -30,13 +30,13 @@ class GraphNode extends HTMLElement {
         this.appendChild(bg);
         // The below isn't maximally efficient, but it does handle resize well.
         this.attach(parent)
-        this.generateContent()
         this.dragger = new PlainDraggable(this, {
             left:x, 
             top:y, 
             handle:bg,
             onMove: _ => this.redrawEdges(),
         });
+        this.generateContent()
     }
 
     generateContent() {
@@ -52,6 +52,10 @@ class GraphNode extends HTMLElement {
         input.addEventListener('keydown', e => { if (e.key == "Enter") {
         }})
         input.focus()
+        this.dragger.onDragEnd = _ => { this.graph.onContained(this, v => {
+                if (v.isClusterNode) {v.addNode(this); return true}
+                else return false
+        })}
     }
 
     detach() {
@@ -130,6 +134,17 @@ class Graph extends HTMLElement {
         delete n1.edges[n2.uuid]
         delete n2.edges[n1.uuid]
     }
+
+    onContained(node,cb) {
+        for (var key in this.nodes) {
+            let val = this.nodes[key]
+            let rect1 = val.getBoundingClientRect()
+            let rect2 = node.getBoundingClientRect()
+            if ((rect1.x < rect2.x) && (rect1.x + rect1.width > rect2.x)
+             && (rect1.y < rect2.y) && (rect1.y + rect1.height > rect2.y)
+             ) { if (cb(val)) break; }
+        }
+    }
 }
 
 class GraphNodeCluster extends GraphNode {
@@ -171,16 +186,25 @@ class GraphNodeCluster extends GraphNode {
                 this.graph.focalNode = node
             }
         }
+        this.redrawEdges();
+        node.redrawEdges();
     }
 
     removeNode(node) {
-        this.graph.appendChild(node) //reattach to graph
         node.dragger.top = this.dragger.top + node.dragger.top + 2 //reposition
         node.dragger.left = this.dragger.left + node.dragger.left + 2
         node.style.position = "absolute"
+        this.graph.appendChild(node) //reattach to graph
         node.cluster = null
         delete this.nodes[node.uuid] //delete from node list
-        node.dragger.onDragEnd = null
+        node.dragger.onDragEnd = _ => { 
+            node.graph.onContained(node, v => {
+                if (v.isClusterNode) {v.addNode(node); return true}
+                else return false
+            })
+        }
+        this.redrawEdges();
+        node.redrawEdges();
     }
 
 }
