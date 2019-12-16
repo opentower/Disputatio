@@ -14,6 +14,7 @@ class GraphNode extends HTMLElement {
         this.style.padding = '10px'
         this.addEventListener('mousemove', e => { 
             if (e.buttons != 0) this.redrawEdges()
+            this.dragger.position()
         }) 
 
         let bg = document.createElement("div");
@@ -73,10 +74,11 @@ class AssertionNode extends GraphNode {
         input.addEventListener('keydown', e => { if (e.key == "Enter") {
         }})
         input.focus()
-        this.dragger.onDragEnd = _ => { this.graph.onContained(this, v => {
-                if (v.isClusterNode) {v.addNode(this); return true}
-                else return false
-        })}
+        this.dragger.onDragEnd = _ => { 
+            for (var v of this.graph.contains(this)) {
+                if (v.isClusterNode) {v.addNode(this); break}
+            }
+        }
     }
 }
 
@@ -156,15 +158,17 @@ class Graph extends HTMLElement {
         delete n2.edges[n1.uuid]
     }
 
-    onContained(node,cb) {
+    contains(node) {
+        let containers = []
         for (var key in this.nodes) {
             let val = this.nodes[key]
             let rect1 = val.getBoundingClientRect()
             let rect2 = node.getBoundingClientRect()
             if ((rect1.x < rect2.x) && (rect1.x + rect1.width > rect2.x)
              && (rect1.y < rect2.y) && (rect1.y + rect1.height > rect2.y)
-             ) { if (cb(val)) break; }
+             ) containers.push(val)
         }
+        return containers
     }
 }
 
@@ -182,25 +186,32 @@ class GraphNodeCluster extends GraphNode {
             this.redrawEdges();
             for (var key in this.nodes) this.nodes[key].redrawEdges()
         }
-        this.array = document.createElement("div");
-        this.appendChild(this.array);
+        this.clusterContents = document.createElement("div");
+        this.appendChild(this.clusterContents);
     }
     
     addNode(node) {
-        this.array.appendChild(node)
+        this.clusterContents.appendChild(node)
+        this.dragger.position();
         node.style.position = "relative"
         node.style.transform = "none"
         this.nodes[node.uuid] = node
         node.cluster = this
-        node.dragger.top = 0
-        node.dragger.left = 0
         node.dragger.onDragEnd = _ => { 
-            if (node.dragger.left < this.getBoundingClientRect().width 
-             && node.dragger.top < this.getBoundingClientRect().height) {
+            if (this.graph.contains(node).includes(this)) {
                 this.addNode(node) 
             } else {
-                this.removeNode(node)
-                this.graph.focalNode = node
+                let unbroken = true
+                for (var v of this.graph.contains(node)) {
+                    if (v.isClusterNode) {
+                        this.removeNode(node)
+                        v.addNode(node)
+                        this.graph.focalNode = v
+                        unbroken = false
+                        break
+                    }
+                }
+                if (unbroken) { this.removeNode(node); this.graph.focalNode = node }
             }
         }
         this.graph.focalNode = this
@@ -209,17 +220,17 @@ class GraphNodeCluster extends GraphNode {
     }
 
     removeNode(node) {
-        node.dragger.top = this.dragger.top + node.dragger.top + 2 //reposition
-        node.dragger.left = this.dragger.left + node.dragger.left + 2
         node.style.position = "absolute"
         this.graph.appendChild(node) //reattach to graph
+        node.dragger.position();
+        node.dragger.top = this.dragger.top + node.dragger.top + 2 //reposition
+        node.dragger.left = this.dragger.left + node.dragger.left + 2
         node.cluster = null
         delete this.nodes[node.uuid] //delete from node list
         node.dragger.onDragEnd = _ => { 
-            node.graph.onContained(node, v => {
-                if (v.isClusterNode) {v.addNode(node); return true}
-                else return false
-            })
+            for (var v of this.graph.contains(node)) { 
+                if (v.isClusterNode) {v.addNode(node); break}
+            }
         }
         this.redrawEdges();
         node.redrawEdges();
