@@ -5,7 +5,6 @@ class GraphNode extends HTMLElement {
     constructor(parent,x,y) {
         super();
         this.graph = parent
-        this.isGraphNode = true
         this.uuid = Math.random().toString(36).substring(2) //generate unique identifier
         this.graph.nodes[this.uuid] = this //register in the graph
         this.edges = {} //initialize table of edges
@@ -36,10 +35,32 @@ class GraphNode extends HTMLElement {
             handle:bg,
             onMove: _ => this.redrawEdges(),
         });
-        this.generateContent()
     }
 
-    generateContent() {
+
+    clearEdges() { for (var key in this.edges) this.graph.removeEdge(this,this.graph.nodes[key]) }
+
+    detach() {
+        this.clearEdges()
+        if (this.cluster) delete this.cluster.nodes[this.uuid]; //delete from nodes if in cluster
+        delete this.graph.nodes[this.uuid] //delete from graph
+        this.parentNode.removeChild(this); 
+    }
+
+    attach(parent) { parent.appendChild(this); }
+
+    redrawEdges() { 
+        for (var key in this.edges) {
+            this.edges[key].position()
+        }
+    }
+}
+
+class AssertionNode extends GraphNode {
+
+    constructor(parent,x,y) {
+        super(parent,x,y)
+        this.isAssertionNode = true
         let input = document.createElement("textarea");
         input.style.position = 'relative'
         input.cols = 5
@@ -56,25 +77,6 @@ class GraphNode extends HTMLElement {
                 if (v.isClusterNode) {v.addNode(this); return true}
                 else return false
         })}
-    }
-
-    clearEdges() { for (var key in this.edges) this.graph.removeEdge(this,this.graph.nodes[key]) }
-
-    detach() {
-        this.clearEdges()
-        if (this.cluster) delete this.cluster.nodes[this.uuid]; //delete from nodes if in cluster
-        delete this.graph.nodes[this.uuid] //delete from graph
-        this.parentNode.removeChild(this); 
-    }
-
-    attach(parent) { 
-        parent.appendChild(this); 
-    }
-
-    redrawEdges() { 
-        for (var key in this.edges) {
-            this.edges[key].position()
-        }
     }
 }
 
@@ -100,8 +102,8 @@ class Graph extends HTMLElement {
                         this.removeEdge(this.focalNode,targetNode)
                         this.focalNode.style.outlineColor = "gray"
                     }
-                } else if (e.target.graphNode.isGraphNode) { //otherwise draw an arrow if the target is eligible
-                    if (this.focalNode.isGraphNode && targetNode != this.focalNode) {
+                } else if (e.target.graphNode.isAssertionNode) { //otherwise draw an arrow if the target is eligible
+                    if (this.focalNode.isAssertionNode && targetNode != this.focalNode) {
                         this.focalNode = this.createCluster(this.focalNode)
                         this.createEdge(this.focalNode, targetNode)
                         this.focalNode.style.outlineColor = "green"
@@ -132,7 +134,7 @@ class Graph extends HTMLElement {
     get focalNode() { return this.focalNodeContents }
 
     createNode(x,y) { 
-        let node = new GraphNode(this,x,y); 
+        let node = new AssertionNode(this,x,y); 
         this.focalNode = node
     }
 
@@ -170,7 +172,6 @@ class GraphNodeCluster extends GraphNode {
     constructor(parent,x,y) {
         super(parent,x,y);
         this.nodes = {}
-        this.isGraphNode = false
         this.isClusterNode = true
 
         this.observer = new MutationObserver(t => {
@@ -181,13 +182,10 @@ class GraphNodeCluster extends GraphNode {
             this.redrawEdges();
             for (var key in this.nodes) this.nodes[key].redrawEdges()
         }
-    }
-    
-    generateContent() {
         this.array = document.createElement("div");
         this.appendChild(this.array);
     }
-
+    
     addNode(node) {
         this.array.appendChild(node)
         node.style.position = "relative"
@@ -230,5 +228,5 @@ class GraphNodeCluster extends GraphNode {
 }
 
 customElements.define('wc-graph', Graph);
-customElements.define('wc-graphnode', GraphNode);
+customElements.define('wc-graphnode', AssertionNode);
 customElements.define('wc-graphnodecluster', GraphNodeCluster);
