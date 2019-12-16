@@ -58,10 +58,10 @@ class GraphNode extends HTMLElement {
         })}
     }
 
+    clearEdges() { for (var key in this.edges) this.graph.removeEdge(this,this.graph.nodes[key]) }
+
     detach() {
-        for (var key in this.edges) {
-            this.graph.removeEdge(this,this.graph.nodes[key])
-        }
+        this.clearEdges()
         if (this.cluster) delete this.cluster.nodes[this.uuid]; //delete from nodes if in cluster
         delete this.graph.nodes[this.uuid] //delete from graph
         this.parentNode.removeChild(this); 
@@ -81,36 +81,55 @@ class GraphNode extends HTMLElement {
 class Graph extends HTMLElement {
     constructor() {
         super();
-
+        this.focalNodeContent //initialize focal node content
         this.nodes = {} //initialize table of nodes
-        this.focalNode //initialize focal node
         this.style.display = 'inline-block'
         this.style.outline = '1px solid'
         this.style.overflow = 'hidden'
         this.style.position = 'relative'
         this.addEventListener('click',e => { 
             if (e.target == this) { this.createNode(e.clientX,e.clientY) } 
-            else if (e.target.graphNode && e.shiftKey) {
+            else if (e.target.graphNode && e.shiftKey) { //holding shift makes the click manipulate arrows.
                 let targetNode = e.target.graphNode
-                //holding shift makes the click manipulate arrows.
-                if (targetNode.uuid in this.focalNode.edges) {
-                    //remove an arrow if it's already there
-                    this.removeEdge(this.focalNode,targetNode)
-                } else if (e.target.graphNode.isGraphNode) {
-                    //otherwise draw an arrow if the target is eligible
+                if (targetNode.uuid in this.focalNode.edges) { //turn support into denial
+                    if (this.focalNode.edges[targetNode.uuid].valence == "pro") {
+                        this.focalNode.edges[targetNode.uuid].valence = "con"
+                        this.focalNode.edges[targetNode.uuid].color = "red"
+                        this.focalNode.style.outlineColor = "red"
+                    } else { //or remove denial
+                        this.removeEdge(this.focalNode,targetNode)
+                        this.focalNode.style.outlineColor = "gray"
+                    }
+                } else if (e.target.graphNode.isGraphNode) { //otherwise draw an arrow if the target is eligible
                     if (this.focalNode.isGraphNode && targetNode != this.focalNode) {
                         this.focalNode = this.createCluster(this.focalNode)
-                        this.createEdge(this.focalNode, e.target.graphNode)
+                        this.createEdge(this.focalNode, targetNode)
+                        this.focalNode.style.outlineColor = "green"
+                        this.focalNode.edges[targetNode.uuid].valence = "pro"
                     } else if (this.focalNode.isClusterNode && targetNode.cluster != this.focalNode ) {
-                        this.createEdge(this.focalNode, e.target.graphNode)
+                        this.focalNode.clearEdges()
+                        this.createEdge(this.focalNode, targetNode)
+                        this.focalNode.edges[targetNode.uuid].valence = "pro"
+                        this.focalNode.style.outlineColor = "green"
                     }
                 }
-            } else if (e.target.graphNode.parentNode == this) {
-                //without shift, click updates focus
+            } else if (e.target.graphNode.parentNode == this) { //without shift, click updates focus
                 this.focalNode = e.target.graphNode
             }
         })
     }
+
+    set focalNode(n) { 
+        if (this.focalNode) {
+            this.focalNodeContents.style.outlineWidth = "1px"
+            this.focalNodeContents.classList.remove('focalNode')
+        }
+        this.focalNodeContents = n
+        this.focalNodeContents.style.outlineWidth = "2px"
+        this.focalNodeContents.classList.add('focalNode')
+    }
+
+    get focalNode() { return this.focalNodeContents }
 
     createNode(x,y) { 
         let node = new GraphNode(this,x,y); 
@@ -124,7 +143,7 @@ class Graph extends HTMLElement {
     }
 
     createEdge(n1,n2) {
-        let line = new LeaderLine(n1, n2)
+        let line = new LeaderLine(n1, n2, {color:"green"})
         n1.edges[n2.uuid] = line
         n2.edges[n1.uuid] = line
     }
@@ -186,6 +205,7 @@ class GraphNodeCluster extends GraphNode {
                 this.graph.focalNode = node
             }
         }
+        this.graph.focalNode = this
         this.redrawEdges();
         node.redrawEdges();
     }
