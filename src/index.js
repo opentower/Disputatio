@@ -2,10 +2,11 @@ var leaderline = require('leader-line')
 var draggable = require('plain_draggable')
 
 class GraphNode extends HTMLElement {
-    constructor(parent,x,y) {
+    constructor(parent,x,y, id) {
         super();
         this.graph = parent
-        this.uuid = Math.random().toString(36).substring(2) //generate unique identifier
+        if (id) this.uuid = id
+        else this.uuid = Math.random().toString(36).substring(2) //generate unique identifier
         this.graph.nodes[this.uuid] = this //register in the graph
         this.edges = {} //initialize table of edges
         this.style.position = 'absolute'
@@ -31,13 +32,12 @@ class GraphNode extends HTMLElement {
         // The below isn't maximally efficient, but it does handle resize well.
         this.attach(parent)
         this.dragger = new PlainDraggable(this, {
-            left:x, 
-            top:y, 
+            left: x, 
+            top: y, 
             handle:bg,
             onMove: _ => this.redrawEdges(),
         });
     }
-
 
     clearEdges() { for (var key in this.edges) this.graph.removeEdge(this,this.graph.nodes[key]) }
 
@@ -46,6 +46,7 @@ class GraphNode extends HTMLElement {
         if (this.cluster) delete this.cluster.nodes[this.uuid]; //delete from nodes if in cluster
         delete this.graph.nodes[this.uuid] //delete from graph
         this.parentNode.removeChild(this); 
+        if (this.graph.focalNode == this) this.graph.focalNode = null
     }
 
     attach(parent) { parent.appendChild(this); }
@@ -55,30 +56,48 @@ class GraphNode extends HTMLElement {
             this.edges[key].position()
         }
     }
+
+    toJSON() { 
+        return { 
+            uuid: this.uuid,
+            edges: Object.keys(this.edges),
+            top: this.dragger.top,
+            left: this.dragger.left,
+            role: "none",
+        }
+    }
+
 }
 
 class AssertionNode extends GraphNode {
 
-    constructor(parent,x,y) {
-        super(parent,x,y)
+    constructor(parent,x,y,id) {
+        super(parent,x,y,id)
         this.isAssertionNode = true
-        let input = document.createElement("textarea");
-        input.style.position = 'relative'
-        input.cols = 5
-        input.rows = 1
-        input.style.border = 'none'
-        input.style.zIndex = 5;
-        input.graphNode = this
-        this.appendChild(input);
-        input.addEventListener('focusout', _ => { if (input.value == "") this.detach() })
-        input.addEventListener('keydown', e => { if (e.key == "Enter") {
+        this.input = document.createElement("textarea");
+        this.input.style.position = 'relative'
+        this.input.cols = 5
+        this.input.rows = 1
+        this.input.style.border = 'none'
+        this.input.style.zIndex = 5;
+        this.input.graphNode = this
+        this.appendChild(this.input);
+        this.input.addEventListener('focusout', _ => { if (this.input.value == "") this.detach() })
+        this.input.addEventListener('keydown', e => { if (e.key == "Enter") {
         }})
-        input.focus()
+        this.input.focus()
         this.dragger.onDragEnd = _ => { 
             for (var v of this.graph.contains(this)) {
                 if (v.isClusterNode) {v.addNode(this); break}
             }
         }
+    }
+
+    toJSON() {
+        let obj = super.toJSON()
+        obj.role = "assertion"
+        obj.value = this.input.value
+        return obj
     }
 }
 
@@ -86,35 +105,32 @@ class Graph extends HTMLElement {
     constructor() {
         super();
         this.focalNodeContent //initialize focal node content
-        this.nodes = {} //initialize table of nodes
+        this.nodes = {}       //initialize table of nodes
+        this.edges = {}       //initialize table of edges
         this.style.display = 'inline-block'
         this.style.outline = '1px solid'
         this.style.overflow = 'hidden'
         this.style.position = 'relative'
         this.addEventListener('click',e => { 
             if (e.target == this) { this.createNode(e.clientX,e.clientY) } 
-            else if (e.target.graphNode && e.shiftKey) { //holding shift makes the click manipulate arrows.
+            else if (this.focalNode && e.target.graphNode && e.shiftKey) { //holding shift makes the click manipulate arrows.
                 let targetNode = e.target.graphNode
                 if (targetNode.uuid in this.focalNode.edges) { //turn support into denial
-                    if (this.focalNode.edges[targetNode.uuid].valence == "pro") {
-                        this.focalNode.edges[targetNode.uuid].valence = "con"
-                        this.focalNode.edges[targetNode.uuid].color = "red"
-                        this.focalNode.style.outlineColor = "red"
+                    if (this.focalNode.valence == "pro") {
+                        this.focalNode.valence = "con"
                     } else { //or remove denial
                         this.removeEdge(this.focalNode,targetNode)
-                        this.focalNode.style.outlineColor = "gray"
+                        this.focalNode.valence = null
                     }
                 } else if (e.target.graphNode.isAssertionNode) { //otherwise draw an arrow if the target is eligible
                     if (this.focalNode.isAssertionNode && targetNode != this.focalNode) {
                         this.focalNode = this.createCluster(this.focalNode)
                         this.createEdge(this.focalNode, targetNode)
-                        this.focalNode.style.outlineColor = "green"
-                        this.focalNode.edges[targetNode.uuid].valence = "pro"
+                        this.focalNode.valence = "pro"
                     } else if (this.focalNode.isClusterNode && targetNode.cluster != this.focalNode ) {
                         this.focalNode.clearEdges()
                         this.createEdge(this.focalNode, targetNode)
-                        this.focalNode.edges[targetNode.uuid].valence = "pro"
-                        this.focalNode.style.outlineColor = "green"
+                        this.focalNode.valence = "pro"
                     }
                 }
             } else if (e.target.graphNode.parentNode == this) { //without shift, click updates focus
@@ -123,14 +139,45 @@ class Graph extends HTMLElement {
         })
     }
 
+    clear() { for (var key in this.nodes) try {this.nodes[key].detach()} catch(e) {} }
+    //we try/catch here because some parents may be removed before their children
+
+    fromJSON(json) {
+        let obj = JSON.parse(json)
+        let rect = this.getBoundingClientRect()
+        console.log(rect)
+        //create assertions
+        for (var key in obj.nodes) if (obj.nodes[key].role == "assertion") {
+            let savednode = obj.nodes[key]
+            new AssertionNode(this, savednode.left + rect.x, savednode.top + rect.y, savednode.uuid)
+            this.nodes[key].input.value = savednode.value
+        }
+        // cluster them and add edges
+         for (var key in obj.nodes) if (obj.nodes[key].role == "cluster") {
+             let savednode = obj.nodes[key]
+             let cluster = new GraphNodeCluster(this, savednode.left + rect.x, savednode.top + rect.y, savednode.uuid)
+             for (var nodekey of savednode.nodes) cluster.addNode(this.nodes[nodekey])
+             for (var nodekey of savednode.edges) this.createEdge(cluster, this.nodes[nodekey])
+             cluster.valence = savednode.valence
+         }
+    }
+
+    toJSON () { 
+        return {
+            nodes: this.nodes,
+            focus: this.focalNode,
+        }
+    }
     set focalNode(n) { 
         if (this.focalNode) {
             this.focalNodeContents.style.outlineWidth = "1px"
             this.focalNodeContents.classList.remove('focalNode')
         }
         this.focalNodeContents = n
-        this.focalNodeContents.style.outlineWidth = "2px"
-        this.focalNodeContents.classList.add('focalNode')
+        if (this.focalNode) {
+            this.focalNodeContents.style.outlineWidth = "2px"
+            this.focalNodeContents.classList.add('focalNode')
+        }
     }
 
     get focalNode() { return this.focalNodeContents }
@@ -138,6 +185,7 @@ class Graph extends HTMLElement {
     createNode(x,y) { 
         let node = new AssertionNode(this,x,y); 
         this.focalNode = node
+        return node
     }
 
     createCluster(node) {
@@ -170,13 +218,17 @@ class Graph extends HTMLElement {
         }
         return containers
     }
+
 }
 
 class GraphNodeCluster extends GraphNode {
-    constructor(parent,x,y) {
-        super(parent,x,y);
+
+    constructor(parent,x,y,id) {
+        super(parent,x,y,id);
+
         this.nodes = {}
         this.isClusterNode = true
+        this.valenceContent = null
 
         this.observer = new MutationObserver(t => {
             if (Object.keys(this.nodes).length == 0) this.detach() 
@@ -234,6 +286,29 @@ class GraphNodeCluster extends GraphNode {
         }
         this.redrawEdges();
         node.redrawEdges();
+    }
+
+    get valence() { return this.valenceContent }
+
+    set valence(s) { 
+        this.valenceContent = s 
+        if (s == "pro") {
+            this.style.outlineColor = "green"
+            for (var key in this.edges) this.edges[key].color = "green"
+        } else if (s == "con") {
+            this.style.outlineColor = "red"
+            for (var key in this.edges) this.edges[key].color = "red"
+        } else {
+            this.style.outlineColor = "gray"
+        }
+    }
+
+    toJSON () {
+        let obj = super.toJSON()
+        obj.role = "cluster"
+        obj.nodes = Object.keys(this.nodes)
+        obj.valence = this.valence
+        return obj
     }
 
 }
