@@ -58,11 +58,13 @@ class GraphNode extends HTMLElement {
     }
 
     toJSON() { 
+        let rect = this.graph.getBoundingClientRect()
         return { 
             uuid: this.uuid,
             edges: Object.keys(this.edges),
-            top: this.dragger.top,
-            left: this.dragger.left,
+            //need to correct for position of graph
+            relativetop: this.dragger.top - rect.y,
+            relativeleft: this.dragger.left - rect.x,
             role: "none",
         }
     }
@@ -149,13 +151,13 @@ class Graph extends HTMLElement {
         //create assertions
         for (var key in obj.nodes) if (obj.nodes[key].role == "assertion") {
             let savednode = obj.nodes[key]
-            new AssertionNode(this, savednode.left + rect.x, savednode.top + rect.y, savednode.uuid)
+            new AssertionNode(this, savednode.relativeleft + rect.x, savednode.relativetop + rect.y, savednode.uuid)
             this.nodes[key].input.value = savednode.value
         }
         // cluster them and add edges
          for (var key in obj.nodes) if (obj.nodes[key].role == "cluster") {
              let savednode = obj.nodes[key]
-             let cluster = new GraphNodeCluster(this, savednode.left + rect.x, savednode.top + rect.y, savednode.uuid)
+             let cluster = new GraphNodeCluster(this, savednode.relativeleft + rect.x, savednode.relativetop + rect.y, savednode.uuid)
              for (var nodekey of savednode.nodes) cluster.addNode(this.nodes[nodekey])
              for (var nodekey of savednode.edges) this.createEdge(cluster, this.nodes[nodekey])
              cluster.valence = savednode.valence
