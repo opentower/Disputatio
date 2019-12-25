@@ -36,6 +36,7 @@ class GraphNode extends HTMLElement {
             top: y, 
             handle:bg,
             onMove: _ => this.redrawEdges(),
+            onMoveStart: _ => this.graph.historyUpdate()
         });
     }
 
@@ -45,7 +46,7 @@ class GraphNode extends HTMLElement {
         this.clearEdges()
         if (this.cluster) delete this.cluster.nodes[this.uuid]; //delete from nodes if in cluster
         delete this.graph.nodes[this.uuid] //delete from graph
-        this.parentNode.removeChild(this); 
+        if (this.parentNode) this.parentNode.removeChild(this); //remove if parent exists
         if (this.graph.focalNode == this) this.graph.focalNode = null
     }
 
@@ -85,8 +86,11 @@ class AssertionNode extends GraphNode {
         this.input.graphNode = this
         this.appendChild(this.input);
         this.input.addEventListener('focusout', _ => { if (this.input.value == "") this.detach() })
-        this.input.addEventListener('keydown', e => { if (e.key == "Enter") {
-        }})
+        this.input.addEventListener('keydown', e => { 
+            this.graph.historyUpdate() 
+            //use keydown to fire before input changes. There's a beforeinput
+            //event, but browser support now is poor.
+        })
         this.input.focus()
         this.dragger.onDragEnd = _ => { 
             for (var v of this.graph.contains(this)) {
@@ -109,6 +113,9 @@ class Graph extends HTMLElement {
         this.focalNodeContent //initialize focal node content
         this.nodes = {}       //initialize table of nodes
         this.edges = {}       //initialize table of edges
+        this.history = []
+        this.historyLock = false
+        this.undoable = true
         this.style.display = 'inline-block'
         this.style.outline = '1px solid'
         this.style.overflow = 'hidden'
@@ -141,13 +148,37 @@ class Graph extends HTMLElement {
         })
     }
 
-    clear() { for (var key in this.nodes) try {this.nodes[key].detach()} catch(e) {} }
-    //we try/catch here because some parents may be removed before their children
+    historyUpdate() { 
+        if (!this.historyLock) {
+            let state = JSON.stringify(this)
+            let oldstate = this.history.pop()
+            let isnew = state != oldstate
+            if (oldstate) { this.history.push(oldstate) }
+            if (this.undoable && isnew) { 
+                this.history.push(state) 
+                console.log('updated')
+            }
+            this.historyLock = true
+        }
+        clearTimeout(this.historyTimeout)
+        this.historyTimeout = setTimeout(() => {this.historyLock = false} , 250)
+    }
+
+    undo() { 
+        this.undoable = false
+        this.clear()
+        if (this.history.length > 0) {
+            let state = this.history.pop()
+            this.fromJSON(state)
+        }
+        this.undoable = true
+    }
+
+    clear() { for (var key in this.nodes) this.nodes[key].detach() }
 
     fromJSON(json) {
         let obj = JSON.parse(json)
         let rect = this.getBoundingClientRect()
-        console.log(rect)
         //create assertions
         for (var key in obj.nodes) if (obj.nodes[key].role == "assertion") {
             let savednode = obj.nodes[key]
@@ -155,13 +186,13 @@ class Graph extends HTMLElement {
             this.nodes[key].input.value = savednode.value
         }
         // cluster them and add edges
-         for (var key in obj.nodes) if (obj.nodes[key].role == "cluster") {
-             let savednode = obj.nodes[key]
-             let cluster = new GraphNodeCluster(this, savednode.relativeleft + rect.x, savednode.relativetop + rect.y, savednode.uuid)
-             for (var nodekey of savednode.nodes) cluster.addNode(this.nodes[nodekey])
-             for (var nodekey of savednode.edges) this.createEdge(cluster, this.nodes[nodekey])
-             cluster.valence = savednode.valence
-         }
+        for (var key in obj.nodes) if (obj.nodes[key].role == "cluster") {
+            let savednode = obj.nodes[key]
+            let cluster = new GraphNodeCluster(this, savednode.relativeleft + rect.x, savednode.relativetop + rect.y, savednode.uuid)
+            for (var nodekey of savednode.nodes) cluster.addNode(this.nodes[nodekey])
+            for (var nodekey of savednode.edges) this.createEdge(cluster, this.nodes[nodekey])
+            cluster.valence = savednode.valence
+        }
     }
 
     toJSON () { 
@@ -185,27 +216,33 @@ class Graph extends HTMLElement {
     get focalNode() { return this.focalNodeContents }
 
     createNode(x,y) { 
+        this.historyUpdate()
         let node = new AssertionNode(this,x,y); 
         this.focalNode = node
         return node
     }
 
     createCluster(node) {
+        this.historyUpdate()
         let cluster = new GraphNodeCluster(this,node.dragger.left,node.dragger.top); 
         cluster.addNode(node)
         return cluster
     }
 
     createEdge(n1,n2) {
+        this.historyUpdate()
         let line = new LeaderLine(n1, n2, {color:"green"})
         n1.edges[n2.uuid] = line
         n2.edges[n1.uuid] = line
     }
 
     removeEdge(n1,n2) {
-        n1.edges[n2.uuid].remove()
-        delete n1.edges[n2.uuid]
-        delete n2.edges[n1.uuid]
+        this.historyUpdate()
+        if (n1 && n2) {
+            n1.edges[n2.uuid].remove()
+            delete n1.edges[n2.uuid]
+            delete n2.edges[n1.uuid]
+        }
     }
 
     contains(node) {
@@ -285,6 +322,7 @@ class GraphNodeCluster extends GraphNode {
             for (var v of this.graph.contains(node)) { 
                 if (v.isClusterNode) {v.addNode(node); break}
             }
+            this.graph.historyUpdate()
         }
         this.redrawEdges();
         node.redrawEdges();
@@ -303,6 +341,7 @@ class GraphNodeCluster extends GraphNode {
         } else {
             this.style.outlineColor = "gray"
         }
+        this.graph.historyUpdate()
     }
 
     toJSON () {
