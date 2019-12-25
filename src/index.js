@@ -36,7 +36,6 @@ class GraphNode extends HTMLElement {
             top: y, 
             handle:bg,
             onMove: _ => this.redrawEdges(),
-            onMoveStart: _ => this.graph.historyUpdate()
         });
     }
 
@@ -77,6 +76,7 @@ class AssertionNode extends GraphNode {
     constructor(parent,x,y,id) {
         super(parent,x,y,id)
         this.isAssertionNode = true
+        this.inputTimeout = false
         this.input = document.createElement("textarea");
         this.input.style.position = 'relative'
         this.input.cols = 5
@@ -86,16 +86,16 @@ class AssertionNode extends GraphNode {
         this.input.graphNode = this
         this.appendChild(this.input);
         this.input.addEventListener('focusout', _ => { if (this.input.value == "") this.detach() })
-        this.input.addEventListener('keydown', e => { 
-            this.graph.historyUpdate() 
-            //use keydown to fire before input changes. There's a beforeinput
-            //event, but browser support now is poor.
+        this.input.addEventListener('input', e => {
+            clearTimeout(this.inputTimeout)
+            this.inputTimeout = setTimeout(_ => this.graph.historyUpdate(),250) 
         })
         this.input.focus()
         this.dragger.onDragEnd = _ => { 
             for (var v of this.graph.contains(this)) {
                 if (v.isClusterNode) {v.addNode(this); break}
             }
+            this.graph.historyUpdate()
         }
     }
 
@@ -114,6 +114,8 @@ class Graph extends HTMLElement {
         this.nodes = {}       //initialize table of nodes
         this.edges = {}       //initialize table of edges
         this.history = []
+        this.future = []
+        this.present = JSON.stringify(this)
         this.historyLock = false
         this.undoable = true
         this.style.display = 'inline-block'
@@ -148,30 +150,44 @@ class Graph extends HTMLElement {
         })
     }
 
-    historyUpdate() { 
-        if (!this.historyLock) {
-            let state = JSON.stringify(this)
-            let oldstate = this.history.pop()
-            let isnew = state != oldstate
-            if (oldstate) { this.history.push(oldstate) }
-            if (this.undoable && isnew) { 
-                this.history.push(state) 
-                console.log('updated')
+    historyUpdate() {
+        setTimeout(_ => {
+            if (!this.historyLock) {
+                let present = JSON.stringify(this)
+                let change = this.present != present
+                if (change) { 
+                    this.history.push(this.present) 
+                    this.present = present
+                    console.log('updated')
+                }
+                this.future = [] //reset future
+                this.historyLock = true //lock history until timeout fires
             }
-            this.historyLock = true
-        }
-        clearTimeout(this.historyTimeout)
-        this.historyTimeout = setTimeout(() => {this.historyLock = false} , 250)
+            clearTimeout(this.historyTimeout)
+            this.historyTimeout = setTimeout(_ => this.historyLock = false, 250)
+        }, 50) //timeout here to make sure updates are finished
     }
 
     undo() { 
-        this.undoable = false
+        this.historyLock = true
         this.clear()
         if (this.history.length > 0) {
-            let state = this.history.pop()
-            this.fromJSON(state)
-        }
-        this.undoable = true
+            let past = this.history.pop()
+            this.future.push(this.present)
+            this.present = past
+            this.fromJSON(past)
+        } else { console.log("no history") }
+    }
+
+    redo() { 
+        this.historyLock = true
+        if (this.future.length > 0) {
+            this.clear()
+            let future = this.future.pop()
+            this.history.push(this.present)
+            this.present = future
+            this.fromJSON(future)
+        } else { console.log("no future") }
     }
 
     clear() { for (var key in this.nodes) this.nodes[key].detach() }
@@ -193,6 +209,8 @@ class Graph extends HTMLElement {
             for (var nodekey of savednode.edges) this.createEdge(cluster, this.nodes[nodekey])
             cluster.valence = savednode.valence
         }
+        //refocus
+        this.focalNode = this.nodes[obj.focus.uuid]
     }
 
     toJSON () { 
@@ -216,33 +234,33 @@ class Graph extends HTMLElement {
     get focalNode() { return this.focalNodeContents }
 
     createNode(x,y) { 
-        this.historyUpdate()
         let node = new AssertionNode(this,x,y); 
         this.focalNode = node
+        this.historyUpdate()
         return node
     }
 
     createCluster(node) {
-        this.historyUpdate()
         let cluster = new GraphNodeCluster(this,node.dragger.left,node.dragger.top); 
         cluster.addNode(node)
+        this.historyUpdate()
         return cluster
     }
 
     createEdge(n1,n2) {
-        this.historyUpdate()
         let line = new LeaderLine(n1, n2, {color:"green"})
         n1.edges[n2.uuid] = line
         n2.edges[n1.uuid] = line
+        this.historyUpdate()
     }
 
     removeEdge(n1,n2) {
-        this.historyUpdate()
         if (n1 && n2) {
             n1.edges[n2.uuid].remove()
             delete n1.edges[n2.uuid]
             delete n2.edges[n1.uuid]
         }
+        this.historyUpdate()
     }
 
     contains(node) {
@@ -304,6 +322,7 @@ class GraphNodeCluster extends GraphNode {
                 }
                 if (unbroken) { this.removeNode(node); this.graph.focalNode = node }
             }
+            this.graph.historyUpdate()
         }
         this.graph.focalNode = this
         this.redrawEdges();
