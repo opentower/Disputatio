@@ -8,13 +8,14 @@ class GraphNode extends HTMLElement {
         if (id) this.uuid = id
         else this.uuid = Math.random().toString(36).substring(2) //generate unique identifier
         this.graph.nodes[this.uuid] = this //register in the graph
-        this.edges = {} //initialize table of edges
+        this.incoming = {} //initialize table of incoming edges
+        this.outgoing = {} //initialize table of outgoing edges
         this.style.position = 'absolute'
         this.style.display= 'inline-block'
         this.style.outline = '1px solid gray'
         this.style.padding = '10px'
         this.addEventListener('mousemove', e => { 
-            if (e.buttons != 0) this.redrawEdges()
+            if (e.buttons != 0) this.graph.redrawEdges()
             this.dragger.position()
         }) 
 
@@ -35,14 +36,18 @@ class GraphNode extends HTMLElement {
             left: x, 
             top: y, 
             handle:bg,
-            onMove: _ => this.redrawEdges(),
+            onMove: _ => this.graph.redrawEdges(),
+            onDragEnd: _ => this.graph.historyUpdate(),
         });
     }
 
-    clearEdges() { for (var key in this.edges) this.graph.removeEdge(this,this.graph.nodes[key]) }
+    clearOutgoing() { for (var key in this.outgoing) this.graph.removeEdge(this,this.graph.nodes[key]) }
+
+    clearIncoming() { for (var key in this.incoming) this.graph.removeEdge(this.graph.nodes[key],this) }
 
     detach() {
-        this.clearEdges()
+        this.clearOutgoing()
+        this.clearIncoming()
         if (this.cluster) delete this.cluster.nodes[this.uuid]; //delete from nodes if in cluster
         delete this.graph.nodes[this.uuid] //delete from graph
         if (this.parentNode) this.parentNode.removeChild(this); //remove if parent exists
@@ -51,17 +56,12 @@ class GraphNode extends HTMLElement {
 
     attach(parent) { parent.appendChild(this); }
 
-    redrawEdges() { 
-        for (var key in this.edges) {
-            this.edges[key].position()
-        }
-    }
-
     toJSON() { 
         let rect = this.graph.getBoundingClientRect()
         return { 
             uuid: this.uuid,
-            edges: Object.keys(this.edges),
+            incoming: Object.keys(this.incoming),
+            outgoing: Object.keys(this.outgoing),
             //need to correct for position of graph
             relativetop: this.dragger.top - rect.y,
             relativeleft: this.dragger.left - rect.x,
@@ -110,14 +110,13 @@ class AssertionNode extends GraphNode {
 class Graph extends HTMLElement {
     constructor() {
         super();
-        this.focalNodeContent //initialize focal node content
-        this.nodes = {}       //initialize table of nodes
-        this.edges = {}       //initialize table of edges
+        this.focalNodeContent = null //initialize focal node content
+        this.nodes = {}              //initialize table of nodes
+        this.edges = {}              //initialize table of edges
         this.history = []
         this.future = []
         this.present = JSON.stringify(this)
         this.historyLock = false
-        this.undoable = true
         this.style.display = 'inline-block'
         this.style.outline = '1px solid'
         this.style.overflow = 'hidden'
@@ -126,24 +125,25 @@ class Graph extends HTMLElement {
             if (e.target == this) { this.createNode(e.clientX,e.clientY) } 
             else if (this.focalNode && e.target.graphNode && e.shiftKey) { //holding shift makes the click manipulate arrows.
                 let targetNode = e.target.graphNode
-                if (targetNode.uuid in this.focalNode.edges) { //turn support into denial
+                if (targetNode.uuid in this.focalNode.outgoing) { //turn support into denial
                     if (this.focalNode.valence == "pro") {
                         this.focalNode.valence = "con"
                     } else { //or remove denial
                         this.removeEdge(this.focalNode,targetNode)
                         this.focalNode.valence = null
                     }
-                } else if (e.target.graphNode.isAssertionNode) { //otherwise draw an arrow if the target is eligible
+                } else if (targetNode.isAssertionNode || targetNode.isClusterNode) { //otherwise draw an arrow if the target is eligible
                     if (this.focalNode.isAssertionNode && targetNode != this.focalNode) {
                         this.focalNode = this.createCluster(this.focalNode)
                         this.createEdge(this.focalNode, targetNode)
                         this.focalNode.valence = "pro"
                     } else if (this.focalNode.isClusterNode && targetNode.cluster != this.focalNode ) {
-                        this.focalNode.clearEdges()
+                        this.focalNode.clearOutgoing()
                         this.createEdge(this.focalNode, targetNode)
                         this.focalNode.valence = "pro"
                     }
-                }
+                } 
+                this.focalNode.updateIncoming()
             } else if (e.target.graphNode.parentNode == this) { //without shift, click updates focus
                 this.focalNode = e.target.graphNode
             }
@@ -190,7 +190,14 @@ class Graph extends HTMLElement {
         } else { console.log("no future") }
     }
 
-    clear() { for (var key in this.nodes) this.nodes[key].detach() }
+    clear() { 
+        for (var key in this.edges) this.edges[key].remove()
+        while (this.firstChild) this.removeChild(this.firstChild)
+        this.edges = {}
+        this.nodes = {}
+    }
+
+    redrawEdges() { for (var key in this.edges) this.edges[key].position() }
 
     fromJSON(json) {
         let obj = JSON.parse(json)
@@ -201,16 +208,21 @@ class Graph extends HTMLElement {
             new AssertionNode(this, savednode.relativeleft + rect.x, savednode.relativetop + rect.y, savednode.uuid)
             this.nodes[key].input.value = savednode.value
         }
-        // cluster them and add edges
+        // cluster them
         for (var key in obj.nodes) if (obj.nodes[key].role == "cluster") {
             let savednode = obj.nodes[key]
             let cluster = new GraphNodeCluster(this, savednode.relativeleft + rect.x, savednode.relativetop + rect.y, savednode.uuid)
             for (var nodekey of savednode.nodes) cluster.addNode(this.nodes[nodekey])
-            for (var nodekey of savednode.edges) this.createEdge(cluster, this.nodes[nodekey])
+        }
+        //add edges
+        for (var key in obj.nodes) if (obj.nodes[key].role == "cluster") {
+            let savednode = obj.nodes[key]
+            let cluster = this.nodes[savednode.uuid]
+            for (var nodekey of savednode.outgoing) this.createEdge(cluster, this.nodes[nodekey])
             cluster.valence = savednode.valence
         }
         //refocus
-        this.focalNode = this.nodes[obj.focus.uuid]
+        if (obj.focus) this.focalNode = this.nodes[obj.focus.uuid]
     }
 
     toJSON () { 
@@ -248,17 +260,33 @@ class Graph extends HTMLElement {
     }
 
     createEdge(n1,n2) {
-        let line = new LeaderLine(n1, n2, {color:"green"})
-        n1.edges[n2.uuid] = line
-        n2.edges[n1.uuid] = line
+        var line
+        if (n2.isClusterNode && n2.uniqueOutgoing) {
+            let euuid = n2.uniqueOutgoing.uuid
+            let etext = document.getElementById(euuid).querySelector("text")
+            line = new LeaderLine(n1, etext, {color:"green"})
+        } else { 
+            line = new LeaderLine(n1, n2, {color:"green"})
+        }
+        line.uuid = Math.random().toString(36).substring(2) //generate unique identifier
+        this.edges[line.uuid] = line
+        line.middleLabel = LeaderLine.captionLabel("⠀") 
+        //XXX:this is an empty braile symbol, rather than a space, since the
+        //label cannot be just whitespace
+        n1.outgoing[n2.uuid] = line
+        n2.incoming[n1.uuid] = line
+        let svg = document.querySelector("body > *.leader-line:last-child")
+        svg.id = line.uuid
         this.historyUpdate()
     }
 
     removeEdge(n1,n2) {
         if (n1 && n2) {
-            n1.edges[n2.uuid].remove()
-            delete n1.edges[n2.uuid]
-            delete n2.edges[n1.uuid]
+            let line = n1.outgoing[n2.uuid]
+            delete this.edges[line.uuid]
+            delete n1.outgoing[n2.uuid]
+            delete n2.incoming[n1.uuid]
+            line.remove()
         }
         this.historyUpdate()
     }
@@ -291,10 +319,7 @@ class GraphNodeCluster extends GraphNode {
             if (Object.keys(this.nodes).length == 0) this.detach() 
         })
         this.observer.observe(this, {subtree:true, childList: true})
-        this.dragger.onMove = _ => {
-            this.redrawEdges();
-            for (var key in this.nodes) this.nodes[key].redrawEdges()
-        }
+        this.dragger.onMove = _ => { this.graph.redrawEdges(); }
         this.clusterContents = document.createElement("div");
         this.appendChild(this.clusterContents);
     }
@@ -325,8 +350,7 @@ class GraphNodeCluster extends GraphNode {
             this.graph.historyUpdate()
         }
         this.graph.focalNode = this
-        this.redrawEdges();
-        node.redrawEdges();
+        this.graph.redrawEdges();
     }
 
     removeNode(node) {
@@ -343,8 +367,13 @@ class GraphNodeCluster extends GraphNode {
             }
             this.graph.historyUpdate()
         }
-        this.redrawEdges();
-        node.redrawEdges();
+        this.graph.redrawEdges();
+    }
+
+    get uniqueOutgoing() {
+        let outgoingKey = Object.keys(this.outgoing)[0]
+        if (outgoingKey) { return this.outgoing[outgoingKey] }
+        else { return null }
     }
 
     get valence() { return this.valenceContent }
@@ -353,14 +382,21 @@ class GraphNodeCluster extends GraphNode {
         this.valenceContent = s 
         if (s == "pro") {
             this.style.outlineColor = "green"
-            for (var key in this.edges) this.edges[key].color = "green"
+            for (var key in this.outgoing) this.outgoing[key].color = "green"
         } else if (s == "con") {
             this.style.outlineColor = "red"
-            for (var key in this.edges) this.edges[key].color = "red"
+            for (var key in this.outgoing) this.outgoing[key].color = "red"
         } else {
             this.style.outlineColor = "gray"
         }
         this.graph.historyUpdate()
+    }
+
+    updateIncoming() {
+        var target
+        if (this.uniqueOutgoing) { target = document.getElementById(this.uniqueOutgoing.uuid).querySelector("text") }
+        else { target = this }
+        for (var key in this.incoming) this.incoming[key].end = target
     }
 
     toJSON () {
