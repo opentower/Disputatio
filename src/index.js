@@ -2,10 +2,11 @@ var leaderline = require('leader-line')
 var draggable = require('plain_draggable')
 
 class GraphNode extends HTMLElement {
-    constructor(parent,x,y, id) {
+    constructor(parent,x,y, config) {
         super();
         this.graph = parent
-        if (id) this.uuid = id
+        if (!config) config = {}
+        if (config.uuid) this.uuid = config.uuid
         else this.uuid = Math.random().toString(36).substring(2) //generate unique identifier
         this.graph.nodes[this.uuid] = this //register in the graph
         this.incoming = {} //initialize table of incoming edges
@@ -59,7 +60,9 @@ class GraphNode extends HTMLElement {
     toJSON() { 
         let rect = this.graph.getBoundingClientRect()
         return { 
-            uuid: this.uuid,
+            config: {
+                uuid: this.uuid,
+            },
             incoming: Object.keys(this.incoming),
             outgoing: Object.keys(this.outgoing),
             //need to correct for position of graph
@@ -73,8 +76,9 @@ class GraphNode extends HTMLElement {
 
 class AssertionNode extends GraphNode {
 
-    constructor(parent,x,y,id) {
-        super(parent,x,y,id)
+    constructor(parent,x,y,config) {
+        super(parent,x,y,config)
+        if (!config) config = {}
         this.isAssertionNode = true
         this.inputTimeout = false
         this.input = document.createElement("textarea");
@@ -84,6 +88,8 @@ class AssertionNode extends GraphNode {
         this.input.style.border = 'none'
         this.input.style.zIndex = 5;
         this.input.graphNode = this
+        if (config.value) {this.input.value = config.value}
+        if (config.immutable) {this.input.disabled = config.immutable}
         this.appendChild(this.input);
         this.input.addEventListener('focusout', _ => { if (this.input.value == "") this.detach() })
         this.input.addEventListener('input', e => {
@@ -102,7 +108,8 @@ class AssertionNode extends GraphNode {
     toJSON() {
         let obj = super.toJSON()
         obj.role = "assertion"
-        obj.value = this.input.value
+        obj.config.value = this.input.value
+        obj.config.immutable = this.input.disabled
         return obj
     }
 }
@@ -121,6 +128,12 @@ class Graph extends HTMLElement {
         this.style.outline = '1px solid'
         this.style.overflow = 'hidden'
         this.style.position = 'relative'
+        this.addEventListener('dragover', e => {e.preventDefault()})
+        this.addEventListener('drop', e => {
+            e.preventDefault(); 
+            let data = e.dataTransfer.getData("application/disputatio")
+            this.createNode(e.clientX,e.clientY,{value: data, immutable: true})
+        })
         this.addEventListener('click',e => { 
             if (e.target == this) { this.createNode(e.clientX,e.clientY) } 
             else if (this.focalNode && e.target.graphNode && e.shiftKey) { //holding shift makes the click manipulate arrows.
@@ -205,19 +218,18 @@ class Graph extends HTMLElement {
         //create assertions
         for (var key in obj.nodes) if (obj.nodes[key].role == "assertion") {
             let savednode = obj.nodes[key]
-            new AssertionNode(this, savednode.relativeleft + rect.x, savednode.relativetop + rect.y, savednode.uuid)
-            this.nodes[key].input.value = savednode.value
+            new AssertionNode(this, savednode.relativeleft + rect.x, savednode.relativetop + rect.y, savednode.config)
         }
         // cluster them
         for (var key in obj.nodes) if (obj.nodes[key].role == "cluster") {
             let savednode = obj.nodes[key]
-            let cluster = new GraphNodeCluster(this, savednode.relativeleft + rect.x, savednode.relativetop + rect.y, savednode.uuid)
+            let cluster = new GraphNodeCluster(this, savednode.relativeleft + rect.x, savednode.relativetop + rect.y, savednode.config)
             for (var nodekey of savednode.nodes) cluster.addNode(this.nodes[nodekey])
         }
         //add edges
         for (var key in obj.nodes) if (obj.nodes[key].role == "cluster") {
             let savednode = obj.nodes[key]
-            let cluster = this.nodes[savednode.uuid]
+            let cluster = this.nodes[savednode.config.uuid]
             for (var nodekey of savednode.outgoing) this.createEdge(cluster, this.nodes[nodekey])
             cluster.valence = savednode.valence
         }
@@ -245,8 +257,8 @@ class Graph extends HTMLElement {
 
     get focalNode() { return this.focalNodeContents }
 
-    createNode(x,y) { 
-        let node = new AssertionNode(this,x,y); 
+    createNode(x,y,config) { 
+        let node = new AssertionNode(this,x,y,config); 
         this.focalNode = node
         this.historyUpdate()
         return node
@@ -308,9 +320,9 @@ class Graph extends HTMLElement {
 
 class GraphNodeCluster extends GraphNode {
 
-    constructor(parent,x,y,id) {
-        super(parent,x,y,id);
-
+    constructor(parent,x,y,config) {
+        super(parent,x,y,config);
+        if (!config) config = {}
         this.nodes = {}
         this.isClusterNode = true
         this.valenceContent = null
@@ -406,7 +418,6 @@ class GraphNodeCluster extends GraphNode {
         obj.valence = this.valence
         return obj
     }
-
 }
 
 customElements.define('wc-graph', Graph);
