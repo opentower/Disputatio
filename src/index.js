@@ -145,8 +145,8 @@ class Graph extends HTMLElement {
                         this.removeEdge(this.focalNode,targetNode)
                         this.focalNode.valence = null
                     }
-                } else if (targetNode.isAssertionNode || targetNode.isClusterNode) { //otherwise draw an arrow if the target is eligible
-                    if (this.focalNode.isAssertionNode && targetNode != this.focalNode) {
+                } else if (targetNode != this.focalNode) { //otherwise draw an arrow if the target is eligible
+                    if (this.focalNode.isAssertionNode) {
                         this.focalNode = this.createCluster(this.focalNode)
                         this.createEdge(this.focalNode, targetNode)
                         this.focalNode.valence = "pro"
