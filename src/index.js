@@ -53,6 +53,7 @@ class GraphNode extends HTMLElement {
         delete this.graph.nodes[this.uuid] //delete from graph
         if (this.parentNode) this.parentNode.removeChild(this); //remove if parent exists
         if (this.graph.focalNode == this) this.graph.focalNode = null
+        this.graph.historyUpdate()
     }
 
     attach(parent) { parent.appendChild(this); }
@@ -89,13 +90,20 @@ class AssertionNode extends GraphNode {
         this.input.style.zIndex = 5;
         this.input.graphNode = this
         if (config.value) {this.input.value = config.value}
-        if (config.immutable) {this.input.disabled = config.immutable}
+        if (config.immutable) {
+            this.addEventListener('keydown', e => {
+                if (e.key == "Backspace") 
+                this.detach()
+                e.preventDefault() 
+            })
+        } else {
+            this.input.addEventListener('input', e => {
+                clearTimeout(this.inputTimeout)
+                this.inputTimeout = setTimeout(_ => this.graph.historyUpdate(),250) 
+            })
+        }
         this.appendChild(this.input);
         this.input.addEventListener('focusout', _ => { if (this.input.value == "") this.detach() })
-        this.input.addEventListener('input', e => {
-            clearTimeout(this.inputTimeout)
-            this.inputTimeout = setTimeout(_ => this.graph.historyUpdate(),250) 
-        })
         this.input.focus()
         this.dragger.onDragEnd = _ => { 
             for (var v of this.graph.contains(this)) {
