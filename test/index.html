@@ -12,10 +12,14 @@
         </script>
     </head>
     <body >
-        <wc-graph style="width:500px;height:500px">
+        <wc-graph id="theGraph" style="width:500px;height:500px">
         </wc-graph>
         <script src="../dist/main.js"></script>
-        <p 
+        <div>
+            <button onclick="document.getElementById('theGraph').undo()">undo</button>
+            <button onclick="document.getElementById('theGraph').redo()">redo</button>
+        </div>
+        <p> 
             <span draggable=true ondragstart="dragstart_handler(event)">
                 Drag me!
             </span>
