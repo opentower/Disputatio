@@ -53,7 +53,6 @@ class GraphNode extends HTMLElement {
         delete this.graph.nodes[this.uuid] //delete from graph
         if (this.parentNode) this.parentNode.removeChild(this); //remove if parent exists
         if (this.graph.focalNode == this) this.graph.focalNode = null
-        this.graph.historyUpdate()
     }
 
     attach(parent) { parent.appendChild(this); }
@@ -242,7 +241,7 @@ class Graph extends HTMLElement {
             cluster.valence = savednode.valence
         }
         //refocus
-        if (obj.focus) this.focalNode = this.nodes[obj.focus.uuid]
+        if (obj.focus) this.focalNode = this.nodes[obj.focus.config.uuid]
     }
 
     toJSON () { 
