@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width" />
+        <title>Disputation Test Sandbox</title>
+        <script charset="utf-8">
+            function dragstart_handler(e,a) {
+                e.dataTransfer.setData("application/disputatio",a)
+                e.dataTransfer.dropEffect = "move"
+            }
+        </script>
+        <style type="text/css" media="screen">
+.assertion { 
+    background: lightblue; 
+    border-radius:7px;
+    padding-left:5px;
+    padding-right:5px;
+}
+        </style>
+    </head>
+    <body >
+        <wc-graph id="theGraph" style="width:1200px;height:500px">
+        </wc-graph>
+        <script src="../dist/main.js"></script>
+        <div>
+            <button onclick="document.getElementById('theGraph').undo()">undo</button>
+            <button onclick="document.getElementById('theGraph').redo()">redo</button>
+        </div>
+        <p> <span class="assertion" draggable=true ondragstart="dragstart_handler(event,
+                'You should not become a vegetarian'
+                )"> Don't become a vegetarian!</span>
+            Do you think your local butcher will
+            reduce the amount of meat she orders from the slaughterhouse if you
+            become a vegetarian? Of course not! 
+            <span class="assertion" draggable=true ondragstart="dragstart_handler(event,
+                'The supply chain for meat is not sensitive to the quantities that a single person consumes.'
+                )">The supply chain for meat just isn’t sensitive to the
+                quantities that a single person consumes.</span> 
+            <span class="assertion" draggable=true ondragstart="dragstart_handler(event,
+                'by becoming a vegetarian, you will never save a single animal’s life'
+                )">So by becoming a vegetarian, you'll never save a single animal’s life!</span> 
+            But 
+            <span class="assertion" draggable=true ondragstart="dragstart_handler(event,
+                'by becoming a vegetarian you will deprive yourself of the pleasure of eating meat'
+                )">by becoming a vegetarian you’ll deprive yourself of the pleasure of eating meat</span> 
+            and 
+            <span class="assertion" draggable=true ondragstart="dragstart_handler(event, 
+                'you should only deprive yourself of pleasure if the benefits outweigh the loss'
+                )">you should only do that if the benefits would outweigh the losses.</span> 
+            So 
+            <span class="assertion" draggable=true ondragstart="dragstart_handler(event,
+                'you should only become a vegetarian if doing so would save the lives of some animals'
+                )">you should only become a vegetarian if doing so would save some animals’ lives.</span> 
+        </p>
+    </body>
+</html>
