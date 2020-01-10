@@ -88,7 +88,11 @@ class AssertionNode extends GraphNode {
         this.input.style.border = 'none'
         this.input.style.zIndex = 5;
         this.input.graphNode = this
-        if (config.value) {this.input.value = config.value}
+        if (config.value) {
+            this.input.value = config.value
+            this.input.cols = Math.min(15,config.value.length)
+            this.input.rows = Math.floor(config.value.length / 15)
+        }
         if (config.immutable) {
             this.addEventListener('keydown', e => {
                 if (e.key == "Backspace") 
