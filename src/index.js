@@ -431,6 +431,45 @@ class GraphNodeCluster extends GraphNode {
     }
 }
 
+function subPrems(obj1,obj2,e1,e2) {
+    var test
+    for (var key1 of e1.nodes) {
+        test = false
+        for (var key2 of e2.nodes) {
+            if (obj1.nodes[key1].config.value == obj2.nodes[key2].config.value) {
+                test = true
+                break
+            }
+        }
+        if (!test) break
+    }
+    return test
+}
+
+function eqEdge(obj1,obj2,e1,e2) {
+    let samePrems = subPrems(obj1,obj2,e1,e2) && subPrems(obj2,obj1,e2,e1)
+    let sameConc = obj1.nodes[e1.outgoing].config.value == obj2.nodes[e2.outgoing].config.value
+    return samePrems && sameConc
+}
+
+export function subTest(json1,json2) {
+    let obj1 = JSON.parse(json1)
+    let obj2 = JSON.parse(json2)
+    var isContained = true
+    for (var key1 in obj1.nodes) if (obj1.nodes[key1].role == "cluster") {
+        let e1 = obj1.nodes[key1]
+        isContained = false
+        for (var key2 in obj2.nodes) if (obj2.nodes[key2].role == "cluster") {
+            let e2 = obj2.nodes[key2]
+            isContained = eqEdge(obj1,obj2,e1,e2)
+            if (isContained) break
+        }
+        if (!isContained) break
+    }
+    console.log("test value:" + isContained)
+    return isContained
+}
+
 customElements.define('wc-graph', Graph);
 customElements.define('wc-graphnode', AssertionNode);
 customElements.define('wc-graphnodecluster', GraphNodeCluster);
