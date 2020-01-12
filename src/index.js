@@ -456,13 +456,21 @@ export function subTest(json1,json2) {
     let obj1 = JSON.parse(json1)
     let obj2 = JSON.parse(json2)
     var isContained = true
-    for (var key1 in obj1.nodes) if (obj1.nodes[key1].role == "cluster") {
+    for (var key1 in obj1.nodes) {
         let e1 = obj1.nodes[key1]
         isContained = false
-        for (var key2 in obj2.nodes) if (obj2.nodes[key2].role == "cluster") {
-            let e2 = obj2.nodes[key2]
-            isContained = eqEdge(obj1,obj2,e1,e2)
-            if (isContained) break
+        if (e1.role == "cluster") {
+            for (var key2 in obj2.nodes) if (obj2.nodes[key2].role == "cluster") {
+                let e2 = obj2.nodes[key2]
+                isContained = eqEdge(obj1,obj2,e1,e2)
+                if (isContained) break
+            }
+        } else if (e1.role == "assertion") {
+            for (var key2 in obj2.nodes) if (obj2.nodes[key2].role == "assertion") {
+                let e2 = obj2.nodes[key2]
+                isContained = e1.config.value == e2.config.value
+                if (isContained) break
+            }
         }
         if (!isContained) break
     }
