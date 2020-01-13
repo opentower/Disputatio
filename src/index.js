@@ -59,6 +59,8 @@ class GraphNode extends HTMLElement {
 
     toJSON() { 
         let rect = this.graph.getBoundingClientRect()
+        let scrollLeft = window.pageXOffset || document.documentElement.scrollLeft
+        let scrollTop = window.pageYOffset || document.documentElement.scrollTop
         return { 
             config: {
                 uuid: this.uuid,
@@ -66,8 +68,8 @@ class GraphNode extends HTMLElement {
             incoming: Object.keys(this.incoming),
             outgoing: Object.keys(this.outgoing),
             //need to correct for position of graph
-            relativetop: this.dragger.top - rect.y,
-            relativeleft: this.dragger.left - rect.x,
+            relativetop: this.dragger.top - rect.y - scrollTop,
+            relativeleft: this.dragger.left - rect.x - scrollLeft,
             role: "none",
         }
     }
@@ -146,7 +148,7 @@ class Graph extends HTMLElement {
             this.createNode(e.clientX,e.clientY,{value: data, immutable: true})
         })
         this.addEventListener('click',e => { 
-            if (e.target == this) { this.createNode(e.clientX,e.clientY) } 
+            if (e.target == this) { this.createNode(e.pageX,e.pageY) } 
             else if (this.focalNode && e.target.graphNode && e.shiftKey) { //holding shift makes the click manipulate arrows.
                 let targetNode = e.target.graphNode
                 if (targetNode.uuid in this.focalNode.outgoing) { //turn support into denial
@@ -226,15 +228,19 @@ class Graph extends HTMLElement {
     fromJSON(json) {
         let obj = JSON.parse(json)
         let rect = this.getBoundingClientRect()
+        let scrollLeft = window.pageXOffset || document.documentElement.scrollLeft
+        let scrollTop = window.pageYOffset || document.documentElement.scrollTop
+        let posx = (n) => n.relativeleft + rect.x + scrollLeft
+        let posy = (n) => n.relativetop + rect.y + scrollTop
         //create assertions
         for (var key in obj.nodes) if (obj.nodes[key].role == "assertion") {
             let savednode = obj.nodes[key]
-            new AssertionNode(this, savednode.relativeleft + rect.x, savednode.relativetop + rect.y, savednode.config)
+            new AssertionNode(this, posx(savednode), posy(savednode), savednode.config)
         }
         // cluster them
         for (var key in obj.nodes) if (obj.nodes[key].role == "cluster") {
             let savednode = obj.nodes[key]
-            let cluster = new GraphNodeCluster(this, savednode.relativeleft + rect.x, savednode.relativetop + rect.y, savednode.config)
+            let cluster = new GraphNodeCluster(this, posx(savednode.relativeleft), posy(savednode), savednode.config)
             for (var nodekey of savednode.nodes) cluster.addNode(this.nodes[nodekey])
         }
         //add edges
@@ -449,6 +455,7 @@ function subPrems(obj1,obj2,e1,e2) {
 function eqEdge(obj1,obj2,e1,e2) {
     let samePrems = subPrems(obj1,obj2,e1,e2) && subPrems(obj2,obj1,e2,e1)
     let sameConc = obj1.nodes[e1.outgoing].config.value == obj2.nodes[e2.outgoing].config.value
+    //TODO: handle case where e1 has no outgoing 
     return samePrems && sameConc
 }
 
