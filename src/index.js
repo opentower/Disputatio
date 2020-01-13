@@ -454,8 +454,14 @@ function subPrems(obj1,obj2,e1,e2) {
 
 function eqEdge(obj1,obj2,e1,e2) {
     let samePrems = subPrems(obj1,obj2,e1,e2) && subPrems(obj2,obj1,e2,e1)
-    let sameConc = obj1.nodes[e1.outgoing].config.value == obj2.nodes[e2.outgoing].config.value
-    //TODO: handle case where e1 has no outgoing 
+    let o1 = e1.outgoing
+    let o2 = e2.outgoing
+    var sameConc
+    if (o1.length == 0) { sameConc = o2.length == 0 }
+    else if (o2.length == 0) { sameConc = false }
+    else { sameConc = obj1.nodes[o1].config.value == obj2.nodes[o2].config.value }
+    //XXX:cleanup. relies on JS treating [[x]] as equivalent to [x], since
+    //e.outgoing is an array.
     return samePrems && sameConc
 }
 
@@ -481,7 +487,6 @@ export function subTest(json1,json2) {
         }
         if (!isContained) break
     }
-    console.log("test value:" + isContained)
     return isContained
 }
 
