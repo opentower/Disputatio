@@ -458,8 +458,16 @@ function eqEdge(obj1,obj2,e1,e2) {
     let o2 = e2.outgoing
     var sameConc
     if (o1.length == 0) { sameConc = o2.length == 0 }
-    else if (o2.length == 0) { sameConc = false }
-    else { sameConc = obj1.nodes[o1].config.value == obj2.nodes[o2].config.value }
+    else if (o2.length > 0 ) {
+        let n1 = obj1.nodes[o1]
+        let n2 = obj2.nodes[o2]
+        if (n1.role == "assertion" && n2.role == "assertion") {
+             sameConc = n1.config.value == n2.config.value 
+        } else if (n1.role == "cluster" && n2.role == "cluster") {
+             alert("cluster comparison not implemented")
+             sameConc = false
+        } else { sameConc = false }
+    } else { sameConc = false }
     //XXX:cleanup. relies on JS treating [[x]] as equivalent to [x], since
     //e.outgoing is an array.
     return samePrems && sameConc
