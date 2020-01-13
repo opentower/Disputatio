@@ -93,7 +93,7 @@ class AssertionNode extends GraphNode {
         if (config.value) {
             this.input.value = config.value
             this.input.cols = Math.min(15,config.value.length)
-            this.input.rows = Math.floor(config.value.length / 15)
+            this.input.rows = Math.ceil(config.value.length / 15)
         }
         if (config.immutable) {
             this.addEventListener('keydown', e => {
