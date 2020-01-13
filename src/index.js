@@ -240,7 +240,7 @@ class Graph extends HTMLElement {
         // cluster them
         for (var key in obj.nodes) if (obj.nodes[key].role == "cluster") {
             let savednode = obj.nodes[key]
-            let cluster = new GraphNodeCluster(this, posx(savednode.relativeleft), posy(savednode), savednode.config)
+            let cluster = new GraphNodeCluster(this, posx(savednode), posy(savednode), savednode.config)
             for (var nodekey of savednode.nodes) cluster.addNode(this.nodes[nodekey])
         }
         //add edges
