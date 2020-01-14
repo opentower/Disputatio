@@ -87,13 +87,14 @@ class AssertionNode extends GraphNode {
         this.input.style.position = 'relative'
         this.input.cols = 5
         this.input.rows = 1
+        this.input.style.fontFamily = 'mono'
         this.input.style.border = 'none'
         this.input.style.zIndex = 5;
         this.input.graphNode = this
         if (config.value) {
             this.input.value = config.value
-            this.input.cols = Math.min(15,config.value.length)
-            this.input.rows = Math.ceil(config.value.length / 15)
+            this.input.cols = Math.min(15,Math.max(5,config.value.length))
+            this.input.rows = Math.ceil(Math.max(5,config.value.length)/15)
         }
         if (config.immutable) {
             this.addEventListener('keydown', e => {
@@ -104,6 +105,9 @@ class AssertionNode extends GraphNode {
         } else {
             this.input.addEventListener('input', e => {
                 clearTimeout(this.inputTimeout)
+                this.input.style.height = 'auto'
+                this.input.cols = Math.min(15,Math.max(5,this.input.value.length))
+                this.input.style.height = this.input.scrollHeight + 'px'
                 this.inputTimeout = setTimeout(_ => this.graph.historyUpdate(),250) 
             })
         }
