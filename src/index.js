@@ -452,7 +452,7 @@ function subPrems(obj1,obj2,e1,e2) {
     return test
 }
 
-function eqEdge(obj1,obj2,e1,e2) {
+function eqEdge(obj1,obj2,e1,e2,uuid1,uuid2) {
     let samePrems = subPrems(obj1,obj2,e1,e2) && subPrems(obj2,obj1,e2,e1)
     let o1 = e1.outgoing
     let o2 = e2.outgoing
@@ -461,15 +461,19 @@ function eqEdge(obj1,obj2,e1,e2) {
     else if (o2.length > 0 ) {
         let n1 = obj1.nodes[o1]
         let n2 = obj2.nodes[o2]
+        //XXX:cleanup. relies on JS treating [[x]] as equivalent to [x], since
+        //e.outgoing is an array.
         if (n1.role == "assertion" && n2.role == "assertion") {
              sameConc = n1.config.value == n2.config.value 
         } else if (n1.role == "cluster" && n2.role == "cluster") {
-             alert("cluster comparison not implemented")
-             sameConc = false
+             if (!uuid1) uuid1 = e1.config.uuid
+             if (!uuid2) uuid2 = e2.config.uuid
+             if (n1.config.uuid == uuid1) uuid1 = "looped" //detect a loop.
+             if (n2.config.uuid == uuid2) uuid2 = "looped"
+             if (uuid1 == "looped" && uuid2 == "looped") sameConc = true
+             else sameConc = eqEdge(obj1, obj2, n1, n2,uuid1,uuid2)
         } else { sameConc = false }
     } else { sameConc = false }
-    //XXX:cleanup. relies on JS treating [[x]] as equivalent to [x], since
-    //e.outgoing is an array.
     return samePrems && sameConc
 }
 
