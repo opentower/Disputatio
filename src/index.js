@@ -461,6 +461,7 @@ function subPrems(obj1,obj2,e1,e2) {
 
 function eqEdge(obj1,obj2,e1,e2,uuid1,uuid2) {
     let samePrems = subPrems(obj1,obj2,e1,e2) && subPrems(obj2,obj1,e2,e1)
+    let sameValence = e1.valence == e2.valence
     let o1 = e1.outgoing
     let o2 = e2.outgoing
     var sameConc
@@ -481,7 +482,7 @@ function eqEdge(obj1,obj2,e1,e2,uuid1,uuid2) {
              else sameConc = eqEdge(obj1, obj2, n1, n2,uuid1,uuid2)
         } else { sameConc = false }
     } else { sameConc = false }
-    return samePrems && sameConc
+    return samePrems && sameConc && sameValence
 }
 
 export function subTest(json1,json2) {
