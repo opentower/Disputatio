@@ -364,7 +364,7 @@ class GraphNodeCluster extends GraphNode {
         node.style.transform = "none"
         this.nodes[node.uuid] = node
         node.cluster = this
-        node.dragger.onDragEnd = _ => { 
+        node.dragger.onDragEnd = e => { 
             if (this.graph.contains(node).includes(this)) {
                 this.addNode(node) 
             } else {
@@ -378,7 +378,7 @@ class GraphNodeCluster extends GraphNode {
                         break
                     }
                 }
-                if (unbroken) { this.removeNode(node); this.graph.focalNode = node }
+                if (unbroken) { this.removeNode(node,e); this.graph.focalNode = node }
             }
             this.graph.historyUpdate()
         }
@@ -386,12 +386,15 @@ class GraphNodeCluster extends GraphNode {
         this.graph.redrawEdges();
     }
 
-    removeNode(node) {
+    removeNode(node,e) {
         node.style.position = "absolute"
         this.graph.appendChild(node) //reattach to graph
         node.dragger.position();
-        node.dragger.top = this.dragger.top + node.dragger.top + 2 //reposition
-        node.dragger.left = this.dragger.left + node.dragger.left + 2
+        if (e) { 
+            console.log(e)
+            node.dragger.top = e.top
+            node.dragger.left = e.left
+        }
         node.cluster = null
         delete this.nodes[node.uuid] //delete from node list
         node.dragger.onDragEnd = _ => { 
