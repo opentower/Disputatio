@@ -364,7 +364,11 @@ class GraphNodeCluster extends GraphNode {
         node.style.transform = "none"
         this.nodes[node.uuid] = node
         node.cluster = this
+        node.dragger.onDragStart = _ => {
+            this.style.zIndex = 50
+        }
         node.dragger.onDragEnd = e => { 
+            this.style.zIndex = 5
             if (this.graph.contains(node).includes(this)) {
                 this.addNode(node) 
             } else {
