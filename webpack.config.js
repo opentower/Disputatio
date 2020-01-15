@@ -4,6 +4,9 @@ module.exports = {
           plain_draggable: "plain-draggable/plain-draggable.min.js"
       }
   },
+  output: {
+    library: "disputatio",
+  },
   module: {
     rules: [
       {

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width" />
+        <title>Equality Check Test</title>
+        <script charset="utf-8">
+            function checkEquality () {
+                let json1 = JSON.stringify(document.getElementById("graph1"))
+                let json2 = JSON.stringify(document.getElementById("graph2"))
+                let rslt = disputatio.subTest(json1,json2) && disputatio.subTest(json2,json1)
+                if (rslt) {alert("graph 1 is equivalent to graph 2")}
+                else {alert("graph 1 is not equivalent graph 2")}
+            }
+        </script>
+
+    </head>
+    <body >
+        <button onclick="checkEquality()">check equality</button>
+        <div>
+            <div style="display:inline-block">
+                <wc-graph id="graph1" style="width:500px;height:500px">
+                </wc-graph>
+                <div>
+                    <button onclick="document.getElementById('graph1').undo()">undo</button>
+                    <button onclick="document.getElementById('graph1').redo()">redo</button>
+                </div>
+            </div>
+            <div style="display:inline-block">
+                <wc-graph id="graph2" style="width:500px;height:500px">
+                </wc-graph>
+                <div>
+                    <button onclick="document.getElementById('graph2').undo()">undo</button>
+                    <button onclick="document.getElementById('graph2').redo()">redo</button>
+                </div>
+            </div>
+        </div>
+        <script src="../dist/main.js"></script>
+    </body>
+</html>

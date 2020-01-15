@@ -59,6 +59,8 @@ class GraphNode extends HTMLElement {
 
     toJSON() { 
         let rect = this.graph.getBoundingClientRect()
+        let scrollLeft = window.pageXOffset || document.documentElement.scrollLeft
+        let scrollTop = window.pageYOffset || document.documentElement.scrollTop
         return { 
             config: {
                 uuid: this.uuid,
@@ -66,8 +68,8 @@ class GraphNode extends HTMLElement {
             incoming: Object.keys(this.incoming),
             outgoing: Object.keys(this.outgoing),
             //need to correct for position of graph
-            relativetop: this.dragger.top - rect.y,
-            relativeleft: this.dragger.left - rect.x,
+            relativetop: this.dragger.top - rect.y - scrollTop,
+            relativeleft: this.dragger.left - rect.x - scrollLeft,
             role: "none",
         }
     }
@@ -85,13 +87,14 @@ class AssertionNode extends GraphNode {
         this.input.style.position = 'relative'
         this.input.cols = 5
         this.input.rows = 1
+        this.input.style.fontFamily = 'mono'
         this.input.style.border = 'none'
         this.input.style.zIndex = 5;
         this.input.graphNode = this
         if (config.value) {
             this.input.value = config.value
-            this.input.cols = Math.min(15,config.value.length)
-            this.input.rows = Math.floor(config.value.length / 15)
+            this.input.cols = Math.min(15,Math.max(5,config.value.length))
+            this.input.rows = Math.ceil(Math.max(5,config.value.length)/15)
         }
         if (config.immutable) {
             this.addEventListener('keydown', e => {
@@ -102,6 +105,9 @@ class AssertionNode extends GraphNode {
         } else {
             this.input.addEventListener('input', e => {
                 clearTimeout(this.inputTimeout)
+                this.input.style.height = 'auto'
+                this.input.cols = Math.min(15,Math.max(5,this.input.value.length))
+                this.input.style.height = this.input.scrollHeight + 'px'
                 this.inputTimeout = setTimeout(_ => this.graph.historyUpdate(),250) 
             })
         }
@@ -146,7 +152,7 @@ class Graph extends HTMLElement {
             this.createNode(e.clientX,e.clientY,{value: data, immutable: true})
         })
         this.addEventListener('click',e => { 
-            if (e.target == this) { this.createNode(e.clientX,e.clientY) } 
+            if (e.target == this) { this.createNode(e.pageX,e.pageY) } 
             else if (this.focalNode && e.target.graphNode && e.shiftKey) { //holding shift makes the click manipulate arrows.
                 let targetNode = e.target.graphNode
                 if (targetNode.uuid in this.focalNode.outgoing) { //turn support into denial
@@ -226,15 +232,19 @@ class Graph extends HTMLElement {
     fromJSON(json) {
         let obj = JSON.parse(json)
         let rect = this.getBoundingClientRect()
+        let scrollLeft = window.pageXOffset || document.documentElement.scrollLeft
+        let scrollTop = window.pageYOffset || document.documentElement.scrollTop
+        let posx = (n) => n.relativeleft + rect.x + scrollLeft
+        let posy = (n) => n.relativetop + rect.y + scrollTop
         //create assertions
         for (var key in obj.nodes) if (obj.nodes[key].role == "assertion") {
             let savednode = obj.nodes[key]
-            new AssertionNode(this, savednode.relativeleft + rect.x, savednode.relativetop + rect.y, savednode.config)
+            new AssertionNode(this, posx(savednode), posy(savednode), savednode.config)
         }
         // cluster them
         for (var key in obj.nodes) if (obj.nodes[key].role == "cluster") {
             let savednode = obj.nodes[key]
-            let cluster = new GraphNodeCluster(this, savednode.relativeleft + rect.x, savednode.relativetop + rect.y, savednode.config)
+            let cluster = new GraphNodeCluster(this, posx(savednode), posy(savednode), savednode.config)
             for (var nodekey of savednode.nodes) cluster.addNode(this.nodes[nodekey])
         }
         //add edges
@@ -429,6 +439,71 @@ class GraphNodeCluster extends GraphNode {
         obj.valence = this.valence
         return obj
     }
+}
+
+function subPrems(obj1,obj2,e1,e2) {
+    var test
+    for (var key1 of e1.nodes) {
+        test = false
+        for (var key2 of e2.nodes) {
+            if (obj1.nodes[key1].config.value == obj2.nodes[key2].config.value) {
+                test = true
+                break
+            }
+        }
+        if (!test) break
+    }
+    return test
+}
+
+function eqEdge(obj1,obj2,e1,e2,uuid1,uuid2) {
+    let samePrems = subPrems(obj1,obj2,e1,e2) && subPrems(obj2,obj1,e2,e1)
+    let o1 = e1.outgoing
+    let o2 = e2.outgoing
+    var sameConc
+    if (o1.length == 0) { sameConc = o2.length == 0 }
+    else if (o2.length > 0 ) {
+        let n1 = obj1.nodes[o1]
+        let n2 = obj2.nodes[o2]
+        //XXX:cleanup. relies on JS treating [[x]] as equivalent to [x], since
+        //e.outgoing is an array.
+        if (n1.role == "assertion" && n2.role == "assertion") {
+             sameConc = n1.config.value == n2.config.value 
+        } else if (n1.role == "cluster" && n2.role == "cluster") {
+             if (!uuid1) uuid1 = e1.config.uuid
+             if (!uuid2) uuid2 = e2.config.uuid
+             if (n1.config.uuid == uuid1) uuid1 = "looped" //detect a loop.
+             if (n2.config.uuid == uuid2) uuid2 = "looped"
+             if (uuid1 == "looped" && uuid2 == "looped") sameConc = true
+             else sameConc = eqEdge(obj1, obj2, n1, n2,uuid1,uuid2)
+        } else { sameConc = false }
+    } else { sameConc = false }
+    return samePrems && sameConc
+}
+
+export function subTest(json1,json2) {
+    let obj1 = JSON.parse(json1)
+    let obj2 = JSON.parse(json2)
+    var isContained = true
+    for (var key1 in obj1.nodes) {
+        let e1 = obj1.nodes[key1]
+        isContained = false
+        if (e1.role == "cluster") {
+            for (var key2 in obj2.nodes) if (obj2.nodes[key2].role == "cluster") {
+                let e2 = obj2.nodes[key2]
+                isContained = eqEdge(obj1,obj2,e1,e2)
+                if (isContained) break
+            }
+        } else if (e1.role == "assertion") {
+            for (var key2 in obj2.nodes) if (obj2.nodes[key2].role == "assertion") {
+                let e2 = obj2.nodes[key2]
+                isContained = e1.config.value == e2.config.value
+                if (isContained) break
+            }
+        }
+        if (!isContained) break
+    }
+    return isContained
 }
 
 customElements.define('wc-graph', Graph);
