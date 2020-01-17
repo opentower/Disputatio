@@ -1,137 +1,7 @@
 var leaderline = require('leader-line')
 var draggable = require('plain_draggable')
 
-class GraphNode extends HTMLElement {
-    constructor(parent,x,y, config) {
-        super();
-        this.graph = parent
-        if (!config) config = {}
-        if (config.uuid) this.uuid = config.uuid
-        else this.uuid = Math.random().toString(36).substring(2) //generate unique identifier
-        this.graph.nodes[this.uuid] = this //register in the graph
-        this.incoming = {} //initialize table of incoming edges
-        this.outgoing = {} //initialize table of outgoing edges
-        this.style.position = 'absolute'
-        this.style.display= 'inline-block'
-        this.style.outline = '1px solid gray'
-        this.style.padding = '10px'
-        this.addEventListener('mousemove', e => { 
-            if (e.buttons != 0) this.graph.redrawEdges()
-            this.dragger.position()
-        }) 
-
-        let bg = document.createElement("div");
-        bg.style.display = 'inline-block'
-        bg.style.position = 'absolute'
-        bg.style.background = 'white'
-        bg.style.top = 0
-        bg.style.left = 0
-        bg.style.height = '100%'
-        bg.style.width = '100%'
-        bg.graphNode = this
-
-        this.appendChild(bg);
-        // The below isn't maximally efficient, but it does handle resize well.
-        this.attach(parent)
-        this.dragger = new PlainDraggable(this, {
-            left: x, 
-            top: y, 
-            handle:bg,
-            onMove: _ => this.graph.redrawEdges(),
-            onDragEnd: _ => this.graph.historyUpdate(),
-        });
-    }
-
-    clearOutgoing() { for (var key in this.outgoing) this.graph.removeEdge(this,this.graph.nodes[key]) }
-
-    clearIncoming() { for (var key in this.incoming) this.graph.removeEdge(this.graph.nodes[key],this) }
-
-    detach() {
-        this.clearOutgoing()
-        this.clearIncoming()
-        if (this.cluster) delete this.cluster.nodes[this.uuid]; //delete from nodes if in cluster
-        delete this.graph.nodes[this.uuid] //delete from graph
-        if (this.parentNode) this.parentNode.removeChild(this); //remove if parent exists
-        if (this.graph.focalNode == this) this.graph.focalNode = null
-    }
-
-    attach(parent) { parent.appendChild(this); }
-
-    toJSON() { 
-        let rect = this.graph.getBoundingClientRect()
-        let scrollLeft = window.pageXOffset || document.documentElement.scrollLeft
-        let scrollTop = window.pageYOffset || document.documentElement.scrollTop
-        return { 
-            config: {
-                uuid: this.uuid,
-            },
-            incoming: Object.keys(this.incoming),
-            outgoing: Object.keys(this.outgoing),
-            //need to correct for position of graph
-            relativetop: this.dragger.top - rect.y - scrollTop,
-            relativeleft: this.dragger.left - rect.x - scrollLeft,
-            role: "none",
-        }
-    }
-
-}
-
-export class AssertionNode extends GraphNode {
-
-    constructor(parent,x,y,config) {
-        super(parent,x,y,config)
-        if (!config) config = {}
-        this.isAssertionNode = true
-        this.inputTimeout = false
-        this.input = document.createElement("textarea");
-        this.input.style.position = 'relative'
-        this.input.cols = 5
-        this.input.rows = 1
-        this.input.style.fontFamily = 'mono'
-        this.input.style.border = 'none'
-        this.input.style.zIndex = 5;
-        this.input.graphNode = this
-        if (config.value) {
-            this.input.value = config.value
-            this.input.cols = Math.min(15,Math.max(5,config.value.length))
-            this.input.rows = Math.ceil(Math.max(5,config.value.length)/15)
-        }
-        if (config.immutable) {
-            this.addEventListener('keydown', e => {
-                if (e.key == "Backspace") 
-                this.detach()
-                e.preventDefault() 
-            })
-        } else {
-            this.input.addEventListener('input', e => {
-                clearTimeout(this.inputTimeout)
-                this.input.style.height = 'auto'
-                this.input.cols = Math.min(15,Math.max(5,this.input.value.length))
-                this.input.style.height = this.input.scrollHeight + 'px'
-                this.inputTimeout = setTimeout(_ => this.graph.historyUpdate(),250) 
-            })
-        }
-        this.appendChild(this.input);
-        this.input.addEventListener('focusout', _ => { if (this.input.value == "") this.detach() })
-        this.input.focus()
-        this.dragger.onDragEnd = _ => { 
-            for (var v of this.graph.contains(this)) {
-                if (v.isClusterNode) {v.addNode(this); break}
-            }
-            this.graph.historyUpdate()
-        }
-    }
-
-    toJSON() {
-        let obj = super.toJSON()
-        obj.role = "assertion"
-        obj.config.value = this.input.value
-        obj.config.immutable = this.input.disabled
-        return obj
-    }
-}
-
-export class Graph extends HTMLElement {
+export class ArgumentMap extends HTMLElement {
     constructor() {
         super();
         this.focalNodeContent = null //initialize focal node content
@@ -149,12 +19,12 @@ export class Graph extends HTMLElement {
         this.addEventListener('drop', e => {
             e.preventDefault(); 
             let data = e.dataTransfer.getData("application/disputatio")
-            this.createNode(e.clientX,e.clientY,{value: data, immutable: true})
+            this.createAssertion(e.clientX,e.clientY,{value: data, immutable: true})
         })
         this.addEventListener('click',e => { 
-            if (e.target == this) { this.createNode(e.pageX,e.pageY) } 
-            else if (this.focalNode && e.target.graphNode && e.shiftKey) { //holding shift makes the click manipulate arrows.
-                let targetNode = e.target.graphNode
+            if (e.target == this) { this.createAssertion(e.pageX,e.pageY) } 
+            else if (this.focalNode && e.target.mapNode && e.shiftKey) { //holding shift makes the click manipulate arrows.
+                let targetNode = e.target.mapNode
                 if (targetNode.uuid in this.focalNode.outgoing) { //turn support into denial
                     if (this.focalNode.valence == "pro") {
                         this.focalNode.valence = "con"
@@ -163,7 +33,7 @@ export class Graph extends HTMLElement {
                         this.focalNode.valence = null
                     }
                 } else if (targetNode != this.focalNode) { //otherwise draw an arrow if the target is eligible
-                    if (this.focalNode.isAssertionNode) {
+                    if (this.focalNode.isAssertion) {
                         this.focalNode = this.createCluster(this.focalNode)
                         this.createEdge(this.focalNode, targetNode)
                         this.focalNode.valence = "pro"
@@ -174,8 +44,8 @@ export class Graph extends HTMLElement {
                     }
                 } 
                 this.focalNode.updateIncoming()
-            } else if (e.target.graphNode.parentNode == this) { //without shift, click updates focus
-                this.focalNode = e.target.graphNode
+            } else if (e.target.mapNode.parentNode == this) { //without shift, click updates focus
+                this.focalNode = e.target.mapNode
             }
         })
     }
@@ -239,12 +109,12 @@ export class Graph extends HTMLElement {
         //create assertions
         for (var key in obj.nodes) if (obj.nodes[key].role == "assertion") {
             let savednode = obj.nodes[key]
-            new AssertionNode(this, posx(savednode), posy(savednode), savednode.config)
+            new Assertion(this, posx(savednode), posy(savednode), savednode.config)
         }
         // cluster them
         for (var key in obj.nodes) if (obj.nodes[key].role == "cluster") {
             let savednode = obj.nodes[key]
-            let cluster = new GraphNodeCluster(this, posx(savednode), posy(savednode), savednode.config)
+            let cluster = new Cluster(this, posx(savednode), posy(savednode), savednode.config)
             for (var nodekey of savednode.nodes) cluster.addNode(this.nodes[nodekey])
         }
         //add edges
@@ -278,15 +148,15 @@ export class Graph extends HTMLElement {
 
     get focalNode() { return this.focalNodeContents }
 
-    createNode(x,y,config) { 
-        let node = new AssertionNode(this,x,y,config); 
+    createAssertion(x,y,config) { 
+        let node = new Assertion(this,x,y,config); 
         this.focalNode = node
         this.historyUpdate()
         return node
     }
 
     createCluster(node) {
-        let cluster = new GraphNodeCluster(this,node.dragger.left,node.dragger.top); 
+        let cluster = new Cluster(this,node.dragger.left,node.dragger.top); 
         cluster.addNode(node)
         this.historyUpdate()
         return cluster
@@ -336,10 +206,139 @@ export class Graph extends HTMLElement {
         }
         return containers
     }
-
 }
 
-export class GraphNodeCluster extends GraphNode {
+
+class GenericNode extends HTMLElement {
+    constructor(parent,x,y, config) {
+        super();
+        this.map = parent
+        if (!config) config = {}
+        if (config.uuid) this.uuid = config.uuid
+        else this.uuid = Math.random().toString(36).substring(2) //generate unique identifier
+        this.map.nodes[this.uuid] = this //register in the map
+        this.incoming = {} //initialize table of incoming edges
+        this.outgoing = {} //initialize table of outgoing edges
+        this.style.position = 'absolute'
+        this.style.display= 'inline-block'
+        this.style.outline = '1px solid gray'
+        this.style.padding = '10px'
+        this.addEventListener('mousemove', e => { 
+            if (e.buttons != 0) this.map.redrawEdges()
+            this.dragger.position()
+        }) 
+
+        let bg = document.createElement("div");
+        bg.style.display = 'inline-block'
+        bg.style.position = 'absolute'
+        bg.style.background = 'white'
+        bg.style.top = 0
+        bg.style.left = 0
+        bg.style.height = '100%'
+        bg.style.width = '100%'
+        bg.mapNode = this
+
+        this.appendChild(bg);
+        // The below isn't maximally efficient, but it does handle resize well.
+        this.attach(parent)
+        this.dragger = new PlainDraggable(this, {
+            left: x, 
+            top: y, 
+            handle:bg,
+            onMove: _ => this.map.redrawEdges(),
+            onDragEnd: _ => this.map.historyUpdate(),
+        });
+    }
+
+    clearOutgoing() { for (var key in this.outgoing) this.map.removeEdge(this,this.map.nodes[key]) }
+
+    clearIncoming() { for (var key in this.incoming) this.map.removeEdge(this.map.nodes[key],this) }
+
+    detach() {
+        this.clearOutgoing()
+        this.clearIncoming()
+        if (this.cluster) delete this.cluster.nodes[this.uuid]; //delete from nodes if in cluster
+        delete this.map.nodes[this.uuid] //delete from map
+        if (this.parentNode) this.parentNode.removeChild(this); //remove if parent exists
+        if (this.map.focalNode == this) this.map.focalNode = null
+    }
+
+    attach(parent) { parent.appendChild(this); }
+
+    toJSON() { 
+        let rect = this.map.getBoundingClientRect()
+        let scrollLeft = window.pageXOffset || document.documentElement.scrollLeft
+        let scrollTop = window.pageYOffset || document.documentElement.scrollTop
+        return { 
+            config: {
+                uuid: this.uuid,
+            },
+            incoming: Object.keys(this.incoming),
+            outgoing: Object.keys(this.outgoing),
+            //need to correct for position of map
+            relativetop: this.dragger.top - rect.y - scrollTop,
+            relativeleft: this.dragger.left - rect.x - scrollLeft,
+            role: "none",
+        }
+    }
+}
+
+export class Assertion extends GenericNode {
+
+    constructor(parent,x,y,config) {
+        super(parent,x,y,config)
+        if (!config) config = {}
+        this.isAssertion = true
+        this.inputTimeout = false
+        this.input = document.createElement("textarea");
+        this.input.style.position = 'relative'
+        this.input.cols = 5
+        this.input.rows = 1
+        this.input.style.fontFamily = 'mono'
+        this.input.style.border = 'none'
+        this.input.style.zIndex = 5;
+        this.input.mapNode = this
+        if (config.value) {
+            this.input.value = config.value
+            this.input.cols = Math.min(15,Math.max(5,config.value.length))
+            this.input.rows = Math.ceil(Math.max(5,config.value.length)/15)
+        }
+        if (config.immutable) {
+            this.addEventListener('keydown', e => {
+                if (e.key == "Backspace") 
+                this.detach()
+                e.preventDefault() 
+            })
+        } else {
+            this.input.addEventListener('input', e => {
+                clearTimeout(this.inputTimeout)
+                this.input.style.height = 'auto'
+                this.input.cols = Math.min(15,Math.max(5,this.input.value.length))
+                this.input.style.height = this.input.scrollHeight + 'px'
+                this.inputTimeout = setTimeout(_ => this.map.historyUpdate(),250) 
+            })
+        }
+        this.appendChild(this.input);
+        this.input.addEventListener('focusout', _ => { if (this.input.value == "") this.detach() })
+        this.input.focus()
+        this.dragger.onDragEnd = _ => { 
+            for (var v of this.map.contains(this)) {
+                if (v.isClusterNode) {v.addNode(this); break}
+            }
+            this.map.historyUpdate()
+        }
+    }
+
+    toJSON() {
+        let obj = super.toJSON()
+        obj.role = "assertion"
+        obj.config.value = this.input.value
+        obj.config.immutable = this.input.disabled
+        return obj
+    }
+}
+
+export class Cluster extends GenericNode {
 
     constructor(parent,x,y,config) {
         super(parent,x,y,config);
@@ -352,7 +351,7 @@ export class GraphNodeCluster extends GraphNode {
             if (Object.keys(this.nodes).length == 0) this.detach() 
         })
         this.observer.observe(this, {subtree:true, childList: true})
-        this.dragger.onMove = _ => { this.graph.redrawEdges(); }
+        this.dragger.onMove = _ => { this.map.redrawEdges(); }
         this.clusterContents = document.createElement("div");
         this.appendChild(this.clusterContents);
     }
@@ -369,30 +368,30 @@ export class GraphNodeCluster extends GraphNode {
         }
         node.dragger.onDragEnd = e => { 
             this.style.zIndex = 5
-            if (this.graph.contains(node).includes(this)) {
+            if (this.map.contains(node).includes(this)) {
                 this.addNode(node) 
             } else {
                 let unbroken = true
-                for (var v of this.graph.contains(node)) {
+                for (var v of this.map.contains(node)) {
                     if (v.isClusterNode) {
                         this.removeNode(node)
                         v.addNode(node)
-                        this.graph.focalNode = v
+                        this.map.focalNode = v
                         unbroken = false
                         break
                     }
                 }
-                if (unbroken) { this.removeNode(node,e); this.graph.focalNode = node }
+                if (unbroken) { this.removeNode(node,e); this.map.focalNode = node }
             }
-            this.graph.historyUpdate()
+            this.map.historyUpdate()
         }
-        this.graph.focalNode = this
-        this.graph.redrawEdges();
+        this.map.focalNode = this
+        this.map.redrawEdges();
     }
 
     removeNode(node,e) {
         node.style.position = "absolute"
-        this.graph.appendChild(node) //reattach to graph
+        this.map.appendChild(node) //reattach to map
         node.dragger.position();
         if (e) { 
             console.log(e)
@@ -402,12 +401,12 @@ export class GraphNodeCluster extends GraphNode {
         node.cluster = null
         delete this.nodes[node.uuid] //delete from node list
         node.dragger.onDragEnd = _ => { 
-            for (var v of this.graph.contains(node)) { 
+            for (var v of this.map.contains(node)) { 
                 if (v.isClusterNode) {v.addNode(node); break}
             }
-            this.graph.historyUpdate()
+            this.map.historyUpdate()
         }
-        this.graph.redrawEdges();
+        this.map.redrawEdges();
     }
 
     get uniqueOutgoing() {
@@ -429,7 +428,7 @@ export class GraphNodeCluster extends GraphNode {
         } else {
             this.style.outlineColor = "gray"
         }
-        this.graph.historyUpdate()
+        this.map.historyUpdate()
     }
 
     updateIncoming() {
