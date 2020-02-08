@@ -1,33 +1,57 @@
 export class Analysis extends HTMLElement {
     constructor() {
         super();
-        let observer = new MutationObserver((mutList,obs) => mutList.forEach(mut => this.decorate(mut, obs)))
+        let observer = new MutationObserver((mutList,obs) => mutList.forEach(mut => this.update(mut, obs)))
         observer.observe(this, {subtree:true, characterData: true, childList: true})
-        console.log("constructed")
+        window.addEventListener('load', _ => this.initDeco())
     }
 
-    decorate (mut, obs) {
+    initDeco() {
+        let working = true
+        let recur = function(node) {
+            let children = node.childNodes
+            children.forEach(n => {
+                if (n.nodeType == Node.TEXT_NODE) {
+                    Analysis.decorate(n)
+                    //unless matches are null, we've got to loop again
+                    //if (n.data.match(/{.*\|.*}/)) working = true
+                } else { recur(n) }
+            })
+        }
+        while (working) {
+            recur(this)
+            working = false
+        }
+    }
+
+    update (mut, obs) {
         if (mut.type == 'characterData') {
-            let parts = mut.target.data.split(/{(.*)\|(.*)}/)
-            if (parts.length > 1) {
-                obs.disconnect()
-                mut.target.deleteData(0,mut.target.length - parts[3].length)
-                let prem = new PremiseSpan()
-                prem.innerHTML = parts[1]
-                prem.content = parts[2]
-                mut.target.before(prem)
-                prem.before(parts[0])
-                obs.observe(this, {subtree:true, characterData: true, childList: true})
-            }
+            obs.disconnect()
+            Analysis.decorate(mut.target)
+            obs.observe(this, {subtree:true, characterData: true, childList: true})
         } 
+    }
+
+    static decorate (cnode) {
+        let parts = cnode.data.split(/{(.*?)\|(.*?)}/)
+        if (parts.length > 1) {
+            cnode.deleteData(0,cnode.length - parts[3].length)
+            let prem = new PremiseSpan(parts[1],parts[2])
+            cnode.before(prem)
+            prem.before(parts[0])
+        }
     }
 }
 
 export class PremiseSpan extends HTMLElement {
-    constructor() {
+    constructor(text,content) {
         super();
+        this.isPremise = true
+        this.innerHTML = text
+        this.content = content || "no content"
+        this.title = content
+        this.alt = content
         this.contentEditable = false
-        this.content = "no content"
         this.style.background = "lightblue"
         this.style.borderRadius = "7px"
         this.style.paddingLeft = "5px"
