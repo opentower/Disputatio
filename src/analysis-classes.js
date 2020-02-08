@@ -12,15 +12,14 @@ export class Analysis extends HTMLElement {
             let children = node.childNodes
             children.forEach(n => {
                 if (n.nodeType == Node.TEXT_NODE) {
+                    if (n.data.match(/{.*\|.*}/)) working = true
                     Analysis.decorate(n)
-                    //unless matches are null, we've got to loop again
-                    //if (n.data.match(/{.*\|.*}/)) working = true
                 } else { recur(n) }
             })
         }
         while (working) {
-            recur(this)
             working = false
+            recur(this)
         }
     }
 
@@ -33,10 +32,22 @@ export class Analysis extends HTMLElement {
     }
 
     static decorate (cnode) {
-        let parts = cnode.data.split(/{(.*?)\|(.*?)}/)
+        let parts = cnode.data.split(/{(.*?)\|(.*?)}([^]*)/)
         if (parts.length > 1) {
-            cnode.deleteData(0,cnode.length - parts[3].length)
             let prem = new PremiseSpan(parts[1],parts[2])
+            console.log("0")
+            console.log(parts[0])
+            console.log("1")
+            console.log(parts[1])
+            console.log("2")
+            console.log(parts[2])
+            console.log("3")
+            console.log(parts[3])
+            console.log(cnode.length)
+            console.log(parts[0].length + parts[1].length + parts[2].length)
+            console.log(parts[3].length)
+            console.log(parts[0].length + parts[1].length + parts[2].length + parts[3].length)
+            cnode.deleteData(0,cnode.length - parts[3].length)
             cnode.before(prem)
             prem.before(parts[0])
         }
