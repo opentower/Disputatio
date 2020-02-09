@@ -19,7 +19,7 @@ export class ArgumentMap extends HTMLElement {
         this.addEventListener('drop', e => {
             e.preventDefault(); 
             let data = e.dataTransfer.getData("application/disputatio")
-            this.createAssertion(e.clientX,e.clientY,{value: data, immutable: true})
+            this.createAssertion(e.pageX,e.pageY,{value: data, immutable: true})
         })
         this.addEventListener('click',e => { 
             if (e.target == this) { this.createAssertion(e.pageX,e.pageY) } 
