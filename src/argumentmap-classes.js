@@ -23,6 +23,9 @@ export class ArgumentMap extends HTMLElement {
             let rect = this.getBoundingClientRect()
             this.createAssertion(e.clientX - rect.left, e.clientY - rect.top,{value: data, immutable: true})
         })
+        this.addEventListener('mousemove', e => { 
+            if (e.buttons != 0) this.redrawEdges()
+        }) 
         this.addEventListener('click',e => { 
             if (e.target == this) { 
                 let rect = this.getBoundingClientRect()
@@ -224,9 +227,6 @@ class GenericNode extends HTMLElement {
         this.style.padding = '10px'
         this.top = y
         this.left = x
-        this.addEventListener('mousemove', e => { 
-            if (e.buttons != 0) this.map.redrawEdges()
-        }) 
 
         let bg = document.createElement("div");
         bg.style.display = 'inline-block'
@@ -242,6 +242,8 @@ class GenericNode extends HTMLElement {
         // The below isn't maximally efficient, but it does handle resize well.
         this.attach(parent)
         $(this).draggable({})
+        $(this).on("dragstart", _ => {this.style.zIndex = 10} )
+        $(this).on("dragstop", _ => {this.style.zIndex = 5} )
     }
 
     clearOutgoing() { for (var key in this.outgoing) this.map.removeEdge(this,this.map.nodes[key]) }
@@ -298,7 +300,6 @@ export class Assertion extends GenericNode {
         this.input.rows = 1
         this.input.style.fontFamily = 'mono'
         this.input.style.border = 'none'
-        this.input.style.zIndex = 5;
         this.input.mapNode = this
         if (config.value) {
             this.input.value = config.value
