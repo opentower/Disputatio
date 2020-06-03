@@ -303,6 +303,7 @@ class GenericNode extends HTMLElement {
         // The below isn't maximally efficient, but it does handle resize well.
         this.attach(parent)
         $(this).draggable({})
+        $(this).on("dragstop",_ => this.map.historyUpdate())
     }
 
     clearOutgoing() { for (var key in this.outgoing) this.map.removeEdge(this,this.map.nodes[key]) }
@@ -390,7 +391,6 @@ export class Assertion extends GenericNode {
             for (var v of this.map.contains(this)) {
                 if (v.isClusterNode) {v.addNode(this); break}
             }
-            this.map.historyUpdate()
         }
     }
 
@@ -448,7 +448,6 @@ export class Cluster extends GenericNode {
                 }
                 if (unbroken) { this.removeNode(node,ui); this.map.focalNode = node }
             }
-            this.map.historyUpdate()
         }
         this.map.focalNode = this
         this.map.redrawEdges();
@@ -467,7 +466,6 @@ export class Cluster extends GenericNode {
             for (var v of this.map.contains(node)) { 
                 if (v.isClusterNode) {v.addNode(node); break}
             }
-            this.map.historyUpdate()
         }
         this.map.redrawEdges();
     }
