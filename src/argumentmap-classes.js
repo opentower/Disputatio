@@ -1,10 +1,53 @@
-var leaderline = require('leader-line')
 var $ = require("jquery")
+var panzoom = require("panzoom")
 require("jquery-ui/ui/widgets/draggable")
+
+class RelativeLine {
+    constructor(s,t,svg) {
+        this.svg = svg
+        this.source = s
+        this.target = t
+        this.midpoint= document.createElementNS("http://www.w3.org/2000/svg", 'foreignObject');
+        this.path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+        this.label = document.createElement("span")
+        this.label.innerHTML = "∙"
+        this.path.style.stroke = "#000"; 
+        this.path.style.fill = "none"; 
+        this.path.style.strokeWidth = "5px";
+        svg.appendChild(this.path)
+        svg.appendChild(this.midpoint)
+        this.midpoint.appendChild(this.label)
+        console.log(this.target)
+        this.updatePosition()
+    }
+
+    updatePosition () {
+        let svgrect = this.svg.getBoundingClientRect()
+        let srect = this.source.getBoundingClientRect()
+        let trect = this.target.getBoundingClientRect()
+        let origin = { x: srect.x - svgrect.x + srect.width/2
+                     , y: srect.y - svgrect.y + srect.height}
+        let destination = { x: trect.x - svgrect.x + trect.width/2
+                          , y: trect.y - svgrect.y}
+        this.path.setAttribute("d", "M" + origin.x + "," + origin.y 
+                                        + " C" + origin.x + "," + (origin.y + 90) 
+                                        + " " + destination.x + "," + (destination.y - 90) 
+                                        + " " + destination.x + "," + destination.y)
+        this.midpoint.setAttribute("x", (origin.x + destination.x)/2)
+        this.midpoint.setAttribute("y", (origin.y + destination.y)/2)
+    }
+
+    remove() { this.svg.removeChild(this.path) }
+
+    set color (c) { this.path.style.stroke = c; }
+
+    get color () { return this.path.style.stroke }
+}
 
 export class ArgumentMap extends HTMLElement {
     constructor() {
         super();
+        // panzoom(this)
         this.focalNodeContent = null //initialize focal node content
         this.nodes = {}              //initialize table of nodes
         this.edges = {}              //initialize table of edges
@@ -12,11 +55,19 @@ export class ArgumentMap extends HTMLElement {
         this.future = []
         this.present = JSON.stringify(this)
         this.historyLock = false
+        this.svg = document.createElementNS("http://www.w3.org/2000/svg", 'svg');;
+        this.svg.style.width = "100%"
+        this.svg.style.height = "100%"
+        this.svg.style.position = "absolute"
+        this.svg.style.pointerEvents = "none"
+        this.svg.style.zIndex = "2"
+        this.appendChild(this.svg)
+
         this.style.display = 'inline-block'
         this.style.outline = '1px solid'
         this.style.overflow = 'hidden'
         this.style.position = 'relative'
-        this.addEventListener('dragover', e => {e.preventDefault()})
+        this.addEventListener('dragover', e => { e.preventDefault() })
         this.addEventListener('drop', e => {
             e.preventDefault(); 
             let data = e.dataTransfer.getData("application/disputatio")
@@ -100,12 +151,12 @@ export class ArgumentMap extends HTMLElement {
 
     clear() { 
         for (var key in this.edges) this.edges[key].remove()
-        while (this.firstChild) this.removeChild(this.firstChild)
+        while (this.lastChild.tagName != "svg") this.removeChild(this.lastChild)
         this.edges = {}
         this.nodes = {}
     }
 
-    redrawEdges() { for (var key in this.edges) this.edges[key].position() }
+    redrawEdges() { for (var key in this.edges) this.edges[key].updatePosition() }
 
     fromJSON(json) {
         let obj = JSON.parse(json)
@@ -136,6 +187,7 @@ export class ArgumentMap extends HTMLElement {
             focus: this.focalNode,
         }
     }
+
     set focalNode(n) { 
         if (this.focalNode) {
             this.focalNodeContents.style.outlineWidth = "1px"
@@ -167,21 +219,15 @@ export class ArgumentMap extends HTMLElement {
     createEdge(n1,n2) {
         var line
         if (n2.isClusterNode && n2.uniqueOutgoing) {
-            let euuid = n2.uniqueOutgoing.uuid
-            let etext = document.getElementById(euuid).querySelector("text")
-            line = new LeaderLine(n1, etext, {color:"green"})
+            line = new RelativeLine(n1, n2.uniqueOutgoing.label, this.svg)
         } else { 
-            line = new LeaderLine(n1, n2, {color:"green"})
+            line = new RelativeLine(n1, n2, this.svg)
         }
         line.uuid = Math.random().toString(36).substring(2) //generate unique identifier
         this.edges[line.uuid] = line
-        line.middleLabel = LeaderLine.captionLabel("⠀") 
-        //XXX:this is an empty braile symbol, rather than a space, since the
-        //label cannot be just whitespace
         n1.outgoing[n2.uuid] = line
         n2.incoming[n1.uuid] = line
-        let svg = document.querySelector("body > *.leader-line:last-child")
-        svg.id = line.uuid
+        line.path.id = line.uuid
         this.historyUpdate()
     }
 
@@ -242,8 +288,6 @@ class GenericNode extends HTMLElement {
         // The below isn't maximally efficient, but it does handle resize well.
         this.attach(parent)
         $(this).draggable({})
-        $(this).on("dragstart", _ => {this.style.zIndex = 10} )
-        $(this).on("dragstop", _ => {this.style.zIndex = 5} )
     }
 
     clearOutgoing() { for (var key in this.outgoing) this.map.removeEdge(this,this.map.nodes[key]) }
@@ -292,6 +336,9 @@ export class Assertion extends GenericNode {
     constructor(parent,x,y,config) {
         super(parent,x,y,config)
         if (!config) config = {}
+        this.style.zIndex = 5
+        $(this).on("dragstart",_=> { this.style.zIndex = 50 })
+        $(this).on("dragstop",_=> { this.style.zIndex = 5 })
         this.isAssertion = true
         this.inputTimeout = false
         this.input = document.createElement("textarea");
@@ -355,6 +402,9 @@ export class Cluster extends GenericNode {
         })
         this.observer.observe(this, {subtree:true, childList: true})
         this.clusterContents = document.createElement("div");
+        this.style.zIndex = 1
+        $(this).on("dragstart",_=> { this.style.zIndex = 50 })
+        $(this).on("dragstop",_=> { this.style.zIndex = 1 })
         this.appendChild(this.clusterContents);
     }
     
@@ -366,12 +416,8 @@ export class Cluster extends GenericNode {
         node.style.transform = "none"
         this.nodes[node.uuid] = node
         node.cluster = this
-        node.dragStart = _ => {
-            this.style.zIndex = 50
-            node.dragOffset = {x : node.offsetLeft, y : node.offsetTop}
-        }
+        node.dragStart = _ => { node.dragOffset = {x : node.offsetLeft, y : node.offsetTop} }
         node.dragStop = (e,ui) => { 
-            this.style.zIndex = 5
             if (this.map.contains(node).includes(this)) {
                 this.addNode(node) 
             } else {

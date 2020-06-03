@@ -21,8 +21,8 @@
     "cssprefix": "^2.0.16",
     "jquery": "^3.5.1",
     "jquery-ui": "^1.12.1",
-    "leader-line": "^1.0.5",
     "m-class-list": "^1.1.9",
+    "panzoom": "^9.2.4",
     "pointer-event": "^1.0.0"
   }
 }
