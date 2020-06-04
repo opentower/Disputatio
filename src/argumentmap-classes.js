@@ -3,6 +3,8 @@ var panzoom = require("panzoom")
 require("jquery-ui/ui/widgets/draggable")
 var RelativeLine = require("./graphical-classes")
 
+var changed = new Event('changed')
+
 export class ArgumentMap extends HTMLElement {
     constructor() {
         super();
@@ -26,16 +28,16 @@ export class ArgumentMap extends HTMLElement {
         this.style.outline = '1px solid'
         this.style.overflow = 'hidden'
         this.style.position = 'relative'
-        this.addEventListener('dragover', e => { e.preventDefault() })
+        this.addEventListener("changed", _ => this.updateHistory())
+        this.addEventListener('dragover', e => e.preventDefault())
         this.addEventListener('drop', e => {
             e.preventDefault(); 
             let data = e.dataTransfer.getData("application/disputatio")
             let rect = this.getBoundingClientRect()
-            this.createAssertion(e.clientX - rect.left, e.clientY - rect.top,{value: data, immutable: true})
+            this.createAssertion(e.clientX - rect.left, e.clientY - rect.top,
+                {value: data, immutable: true})
         })
-        this.addEventListener('mousemove', e => { 
-            if (e.buttons != 0) this.redrawEdges()
-        }) 
+        this.addEventListener('mousemove', e => { if (e.buttons != 0) this.redrawEdges()} ) 
         this.addEventListener('click',e => { 
             if (e.target == this) { 
                 let rect = this.getBoundingClientRect()
@@ -68,7 +70,7 @@ export class ArgumentMap extends HTMLElement {
         })
     }
 
-    historyUpdate() {
+    updateHistory() {
         setTimeout(_ => {
             if (!this.historyLock) {
                 let present = JSON.stringify(this)
@@ -115,7 +117,9 @@ export class ArgumentMap extends HTMLElement {
         this.nodes = {}
     }
 
-    redrawEdges() { for (var key in this.edges) this.edges[key].updatePosition() }
+    redrawEdges() { 
+        for (var key in this.edges) this.edges[key].updatePosition() 
+    }
 
     fromJSON(json) {
         let obj = JSON.parse(json)
@@ -164,14 +168,14 @@ export class ArgumentMap extends HTMLElement {
     createAssertion(x,y,config) { 
         let node = new Assertion(this,x,y,config); 
         this.focalNode = node
-        this.historyUpdate()
+        this.dispatchEvent(changed)
         return node
     }
 
     createCluster(node) {
         let cluster = new Cluster(this,node.left,node.top); 
         cluster.addNode(node)
-        this.historyUpdate()
+        this.dispatchEvent(changed)
         return cluster
     }
 
@@ -187,7 +191,7 @@ export class ArgumentMap extends HTMLElement {
         n1.outgoing[n2.uuid] = line
         n2.incoming[n1.uuid] = line
         line.path.id = line.uuid
-        this.historyUpdate()
+        this.dispatchEvent(changed)
     }
 
     removeEdge(n1,n2) {
@@ -198,7 +202,7 @@ export class ArgumentMap extends HTMLElement {
             delete n2.incoming[n1.uuid]
             line.remove()
         }
-        this.historyUpdate()
+        this.dispatchEvent(changed)
     }
 
     contains(node) {
@@ -246,7 +250,7 @@ class GenericNode extends HTMLElement {
         // The below isn't maximally efficient, but it does handle resize well.
         this.attach(parent)
         $(this).draggable({})
-        $(this).on("dragstop",_ => this.map.historyUpdate())
+        $(this).on("dragstop", _ => this.map.dispatchEvent(changed))
     }
 
     clearOutgoing() { for (var key in this.outgoing) this.map.removeEdge(this,this.map.nodes[key]) }
@@ -296,8 +300,8 @@ export class Assertion extends GenericNode {
         super(parent,x,y,config)
         if (!config) config = {}
         this.style.zIndex = 5
-        $(this).on("dragstart",_=> { this.style.zIndex = 50 })
-        $(this).on("dragstop",_=> { this.style.zIndex = 5 })
+        $(this).on("dragstart",_=> this.style.zIndex = 50)
+        $(this).on("dragstop",_=> this.style.zIndex = 5)
         this.isAssertion = true
         this.inputTimeout = false
         this.input = document.createElement("textarea");
@@ -314,8 +318,7 @@ export class Assertion extends GenericNode {
         }
         if (config.immutable) {
             this.addEventListener('keydown', e => {
-                if (e.key == "Backspace") 
-                this.detach()
+                if (e.key == "Backspace") this.detach()
                 e.preventDefault() 
             })
         } else {
@@ -324,11 +327,13 @@ export class Assertion extends GenericNode {
                 this.input.style.height = 'auto'
                 this.input.cols = Math.min(15,Math.max(5,this.input.value.length))
                 this.input.style.height = this.input.scrollHeight + 'px'
-                this.inputTimeout = setTimeout(_ => this.map.historyUpdate(),250) 
+                this.inputTimeout = setTimeout(_ => this.map.dispatchEvent(changed),250) 
             })
         }
         this.appendChild(this.input);
-        this.input.addEventListener('focusout', _ => { if (this.input.value == "") this.detach() })
+        this.input.addEventListener('focusout', _ => { 
+            if (this.input.value == "") this.detach() 
+        })
         this.input.focus()
         this.dragStop = _ => { 
             for (var v of this.map.contains(this)) {
@@ -361,8 +366,8 @@ export class Cluster extends GenericNode {
         this.observer.observe(this, {subtree:true, childList: true})
         this.clusterContents = document.createElement("div");
         this.style.zIndex = 1
-        $(this).on("dragstart",_=> { this.style.zIndex = 50 })
-        $(this).on("dragstop",_=> { this.style.zIndex = 1 })
+        $(this).on("dragstart",_ => this.style.zIndex = 50)
+        $(this).on("dragstop",_ => this.style.zIndex = 1)
         this.appendChild(this.clusterContents);
     }
     
@@ -374,7 +379,7 @@ export class Cluster extends GenericNode {
         node.style.transform = "none"
         this.nodes[node.uuid] = node
         node.cluster = this
-        node.dragStart = _ => { node.dragOffset = {x : node.offsetLeft, y : node.offsetTop} }
+        node.dragStart = _ => node.dragOffset = {x : node.offsetLeft, y : node.offsetTop}
         node.dragStop = (e,ui) => { 
             if (this.map.contains(node).includes(this)) {
                 this.addNode(node) 
@@ -432,7 +437,7 @@ export class Cluster extends GenericNode {
         } else {
             this.style.outlineColor = "gray"
         }
-        this.map.historyUpdate()
+        this.map.dispatchEvent(changed)
     }
 
     updateIncoming() {
