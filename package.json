@@ -19,9 +19,10 @@
   "dependencies": {
     "anim-event": "^1.0.16",
     "cssprefix": "^2.0.16",
-    "leader-line": "^1.0.5",
+    "jquery": "^3.5.1",
+    "jquery-ui": "^1.12.1",
     "m-class-list": "^1.1.9",
-    "plain-draggable": "^2.5.12",
+    "panzoom": "^9.2.4",
     "pointer-event": "^1.0.0"
   }
 }
