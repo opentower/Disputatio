@@ -63,5 +63,4 @@ export class PremiseSpan extends HTMLElement {
         e.dataTransfer.setData("application/disputatio",this.content)
         e.dataTransfer.dropEffect = "move"
     }
-
 }
