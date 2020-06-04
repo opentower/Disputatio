@@ -6,13 +6,14 @@ class RelativeLine {
         this.midpoint= document.createElementNS("http://www.w3.org/2000/svg", 'foreignObject');
         this.path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
         this.head = document.createElementNS("http://www.w3.org/2000/svg", 'path');
-        this.label = document.createElement("span")
-        this.label.innerHTML = "∙"
+        this.label = document.createElementNS("http://www.w3.org/1999/xhtml","span")
         this.path.style.stroke = "#000"; 
         this.path.style.fill = "none"; 
         this.path.style.strokeWidth = "5px";
         this.head.style.stroke = "#000"; 
         this.head.style.fill = "none"; 
+        this.midpoint.setAttribute("width","100px")
+        this.midpoint.setAttribute("height","100px")
         this.head.style.strokeWidth = "5px";
         svg.appendChild(this.path)
         svg.appendChild(this.midpoint)
