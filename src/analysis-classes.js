@@ -51,7 +51,7 @@ export class PremiseSpan extends HTMLElement {
         this.title = this.content
         this.alt = this.content
         this.contentEditable = false
-        this.style.background = "lightblue"
+        this.style.background = "#deeff5"
         this.style.borderRadius = "7px"
         this.style.paddingLeft = "5px"
         this.style.paddingRight = "5px"

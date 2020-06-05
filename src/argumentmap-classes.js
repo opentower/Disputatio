@@ -308,13 +308,11 @@ export class Assertion extends GenericNode {
         this.input.style.position = 'relative'
         this.input.cols = 5
         this.input.rows = 1
-        this.input.style.fontFamily = 'mono'
         this.input.style.border = 'none'
         this.input.mapNode = this
         if (config.value) {
             this.input.value = config.value
             this.input.cols = Math.min(15,Math.max(5,config.value.length))
-            this.input.rows = Math.ceil(Math.max(5,config.value.length)/15)
         }
         if (config.immutable) {
             this.addEventListener('keydown', e => {
@@ -331,6 +329,7 @@ export class Assertion extends GenericNode {
             })
         }
         this.appendChild(this.input);
+        this.input.style.height = this.input.scrollHeight + 'px'
         this.input.addEventListener('focusout', _ => { 
             if (this.input.value == "") this.detach() 
         })
