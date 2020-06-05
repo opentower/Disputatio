@@ -398,6 +398,7 @@ export class Cluster extends GenericNode {
         }
         this.map.focalNode = this
         this.map.redrawEdges();
+        this.map.dispatchEvent(changed)
     }
 
     removeNode(node,ui) {
@@ -415,6 +416,7 @@ export class Cluster extends GenericNode {
             }
         }
         this.map.redrawEdges();
+        this.map.dispatchEvent(changed)
     }
 
     get uniqueOutgoing() {
