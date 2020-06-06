@@ -27,10 +27,12 @@ class RelativeLine {
         let svgrect = this.svg.getBoundingClientRect()
         let srect = this.source.getBoundingClientRect()
         let trect = this.target.getBoundingClientRect()
-        let origin = { x: srect.x - svgrect.x + srect.width/2
-                     , y: srect.y - svgrect.y + srect.height}
-        let destination = { x: trect.x - svgrect.x + trect.width/2
-                          , y: trect.y - svgrect.y - 10}
+        let zoom
+        if (this.svg.getZoom) { zoom = this.svg.getZoom() } else { zoom = 1 }
+        let origin = { x: (srect.x - svgrect.x + srect.width/2)/zoom
+                     , y: (srect.y - svgrect.y + srect.height)/zoom }
+        let destination = { x: (trect.x - svgrect.x + trect.width/2)/zoom
+                          , y: (trect.y - svgrect.y - 10)/zoom }
         this.path.setAttribute("d", "M" + origin.x + "," + origin.y 
                                         + " C" + origin.x + "," + (origin.y + 90) 
                                         + " " + destination.x + "," + (destination.y - 90) 

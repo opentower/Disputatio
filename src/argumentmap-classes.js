@@ -8,7 +8,11 @@ var changed = new Event('changed')
 export class ArgumentMap extends HTMLElement {
     constructor() {
         super();
-        // panzoom(this)
+        this.zoom = panzoom(this, {
+            zoomSpeed: 0.1,
+            beforeWheel: e => { return !e.altKey },
+            beforeMouseDown: e => { return !e.altKey },
+        })
         this.focalNodeContent = null //initialize focal node content
         this.nodes = {}              //initialize table of nodes
         this.edges = {}              //initialize table of edges
@@ -17,6 +21,8 @@ export class ArgumentMap extends HTMLElement {
         this.present = JSON.stringify(this)
         this.historyLock = false
         this.svg = document.createElementNS("http://www.w3.org/2000/svg", 'svg')
+        this.getZoom = _ => { return this.zoom.getTransform().scale }
+        this.svg.getZoom = _ => { return this.zoom.getTransform().scale }
         this.svg.style.width = "100%"
         this.svg.style.height = "100%"
         this.svg.style.position = "absolute"
@@ -34,14 +40,16 @@ export class ArgumentMap extends HTMLElement {
             e.preventDefault(); 
             let data = e.dataTransfer.getData("application/disputatio")
             let rect = this.getBoundingClientRect()
-            this.createAssertion(e.clientX - rect.left, e.clientY - rect.top,
+            let zoom = this.getZoom()
+            this.createAssertion((e.clientX - rect.left)/zoom,(e.clientY - rect.top)/zoom,
                 {value: data, immutable: true})
         })
         this.addEventListener('mousemove', e => { if (e.buttons != 0) this.redrawEdges()} ) 
         this.addEventListener('click',e => { 
             if (e.target == this) { 
                 let rect = this.getBoundingClientRect()
-                this.createAssertion(e.clientX - rect.left - 20, e.clientY - rect.top - 20) 
+                let zoom = this.getZoom()
+                this.createAssertion((e.clientX - rect.left - 20)/zoom, (e.clientY - rect.top - 20)/zoom) 
             } 
             else if (this.focalNode && e.target.mapNode && e.shiftKey) { //holding shift makes the click manipulate arrows.
                 let targetNode = e.target.mapNode
@@ -249,7 +257,23 @@ class GenericNode extends HTMLElement {
         this.appendChild(bg);
         // The below isn't maximally efficient, but it does handle resize well.
         this.attach(parent)
-        $(this).draggable({})
+        $(this).draggable({
+            // handle: '.drag-handle',
+            start: function(event, ui) {
+                ui.position.left = 0;
+                ui.position.top = 0;
+            },
+            drag: function(event, ui) {
+                var zoom = this.map.getZoom()
+                var changeLeft = ui.position.left - ui.originalPosition.left; // find change in left
+                var newLeft = ui.originalPosition.left + changeLeft / zoom; // adjust new left by our zoomScale
+                var changeTop = ui.position.top - ui.originalPosition.top; // find change in top
+                var newTop = ui.originalPosition.top + changeTop / zoom; // adjust new top by our zoomScale
+                ui.position.left = newLeft;
+                ui.position.top = newTop;
+        
+            }
+        });
         $(this).on("dragstop", _ => this.map.dispatchEvent(changed))
     }
 
