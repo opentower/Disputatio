@@ -46,7 +46,7 @@ export class ArgumentMap extends HTMLElement {
             e.preventDefault(); 
             let data = e.dataTransfer.getData("application/disputatio")
             let rect = this.surface.getBoundingClientRect()
-            let trans = this.getTrans().scale
+            let zoom = this.getTrans().scale
             this.createAssertion((e.clientX - rect.left)/zoom,(e.clientY - rect.top)/zoom,
                 {value: data, immutable: true})
         })
