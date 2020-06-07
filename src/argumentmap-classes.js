@@ -8,11 +8,7 @@ var changed = new Event('changed')
 export class ArgumentMap extends HTMLElement {
     constructor() {
         super();
-        this.zoom = panzoom(this, {
-            zoomSpeed: 0.1,
-            beforeWheel: e => { return !e.altKey },
-            beforeMouseDown: e => { return !e.altKey },
-        })
+        this.surface = document.createElement("div")
         this.focalNodeContent = null //initialize focal node content
         this.nodes = {}              //initialize table of nodes
         this.edges = {}              //initialize table of edges
@@ -21,34 +17,44 @@ export class ArgumentMap extends HTMLElement {
         this.present = JSON.stringify(this)
         this.historyLock = false
         this.svg = document.createElementNS("http://www.w3.org/2000/svg", 'svg')
-        this.getZoom = _ => { return this.zoom.getTransform().scale }
+        this.getTrans = _ => { return this.zoom.getTransform() }
         this.svg.getZoom = _ => { return this.zoom.getTransform().scale }
+        this.surface.style.width = "1px"
+        this.surface.style.height = "1px"
         this.svg.style.width = "100%"
         this.svg.style.height = "100%"
         this.svg.style.position = "absolute"
         this.svg.style.pointerEvents = "none"
+        this.svg.style.overflow = "visible"
         this.svg.style.zIndex = "2"
-        this.appendChild(this.svg)
-
+        this.appendChild(this.surface)
+        this.surface.appendChild(this.svg)
+        this.zoom = panzoom(this.surface, {
+            zoomSpeed: 0.1,
+            beforeWheel: e => { return !e.altKey },
+            beforeMouseDown: e => { return !e.altKey },
+        })
+        this.style.zIndex = "2"
+        this.surface.style.zIndex = "0"
+        this.style.outline = "1px solid"
         this.style.display = 'inline-block'
-        this.style.outline = '1px solid'
-        this.style.overflow = 'hidden'
         this.style.position = 'relative'
+        this.style.overflow = 'hidden'
         this.addEventListener("changed", _ => this.updateHistory())
         this.addEventListener('dragover', e => e.preventDefault())
         this.addEventListener('drop', e => {
             e.preventDefault(); 
             let data = e.dataTransfer.getData("application/disputatio")
-            let rect = this.getBoundingClientRect()
-            let zoom = this.getZoom()
+            let rect = this.surface.getBoundingClientRect()
+            let trans = this.getTrans().scale
             this.createAssertion((e.clientX - rect.left)/zoom,(e.clientY - rect.top)/zoom,
                 {value: data, immutable: true})
         })
-        this.addEventListener('mousemove', e => { if (e.buttons != 0) this.redrawEdges()} ) 
+        $(this).on('drag', _ => this.redrawEdges() ) 
         this.addEventListener('click',e => { 
             if (e.target == this) { 
-                let rect = this.getBoundingClientRect()
-                let zoom = this.getZoom()
+                let rect = this.surface.getBoundingClientRect()
+                let zoom = this.getTrans().scale
                 this.createAssertion((e.clientX - rect.left - 20)/zoom, (e.clientY - rect.top - 20)/zoom) 
             } 
             else if (this.focalNode && e.target.mapNode && e.shiftKey) { //holding shift makes the click manipulate arrows.
@@ -72,7 +78,7 @@ export class ArgumentMap extends HTMLElement {
                     }
                 } 
                 this.focalNode.updateIncoming()
-            } else if (e.target.mapNode.parentNode == this) { //without shift, click updates focus
+            } else if (e.target.mapNode.parentNode == this.surface) { //without shift, click updates focus
                 this.focalNode = e.target.mapNode
             }
         })
@@ -255,27 +261,30 @@ class GenericNode extends HTMLElement {
         bg.mapNode = this
 
         this.appendChild(bg);
-        // The below isn't maximally efficient, but it does handle resize well.
         this.attach(parent)
-        $(this).draggable({
-            // handle: '.drag-handle',
-            start: function(event, ui) {
-                ui.position.left = 0;
-                ui.position.top = 0;
-            },
-            drag: function(event, ui) {
-                var zoom = this.map.getZoom()
-                var changeLeft = ui.position.left - ui.originalPosition.left; // find change in left
-                var newLeft = ui.originalPosition.left + changeLeft / zoom; // adjust new left by our zoomScale
-                var changeTop = ui.position.top - ui.originalPosition.top; // find change in top
-                var newTop = ui.originalPosition.top + changeTop / zoom; // adjust new top by our zoomScale
-                ui.position.left = newLeft;
-                ui.position.top = newTop;
-        
-            }
-        });
+        this.initDrag(1)
         $(this).on("dragstop", _ => this.map.dispatchEvent(changed))
     }
+
+    initDrag (translationFactor) { 
+        //need to reinitialize the drag object when reattaching the node
+        //when dragging, need to translate when attached to map, and not otherwise
+        $(this).draggable({
+            start: function(event, ui) {
+                ui.position.left = 0
+                ui.position.top = 0
+            },
+            drag: function(event, ui) {
+                var trans = this.map.getTrans()
+                var changeLeft = ui.position.left - (ui.originalPosition.left + (trans.x * translationFactor)); // find change in left
+                var newLeft = ui.originalPosition.left + changeLeft / trans.scale; // adjust new left by our zoomScale
+                var changeTop = ui.position.top - (ui.originalPosition.top + (trans.y * translationFactor)); // find change in top
+                var newTop = ui.originalPosition.top + changeTop / trans.scale; // adjust new top by our zoomScale
+                ui.position.left = newLeft;
+                ui.position.top = newTop;
+            }
+        });
+    };
 
     clearOutgoing() { for (var key in this.outgoing) this.map.removeEdge(this,this.map.nodes[key]) }
 
@@ -290,7 +299,7 @@ class GenericNode extends HTMLElement {
         if (this.map.focalNode == this) this.map.focalNode = null
     }
 
-    attach(parent) { parent.appendChild(this); }
+    attach(parent) { parent.surface.appendChild(this); }
 
     get top() { return parseInt(this.style.top) }
  
@@ -399,8 +408,9 @@ export class Cluster extends GenericNode {
         node.style.position = "relative"
         node.top = 0
         node.left = 0
-        node.style.transform = "none"
+        node.initDrag(0)
         this.nodes[node.uuid] = node
+
         node.cluster = this
         node.dragStart = _ => node.dragOffset = {x : node.offsetLeft, y : node.offsetTop}
         node.dragStop = (e,ui) => { 
@@ -417,7 +427,10 @@ export class Cluster extends GenericNode {
                         break
                     }
                 }
-                if (unbroken) { this.removeNode(node,ui); this.map.focalNode = node }
+                if (unbroken) { 
+                    this.removeNode(node,ui)
+                    this.map.focalNode = node
+                }
             }
         }
         this.map.focalNode = this
@@ -427,7 +440,8 @@ export class Cluster extends GenericNode {
 
     removeNode(node,ui) {
         node.style.position = "absolute"
-        this.map.appendChild(node) //reattach to map
+        node.initDrag(1) //resume translation
+        this.map.surface.appendChild(node) //reattach to map
         if (ui) { 
             node.top = ui.position.top + node.cluster.top + node.dragOffset.y
             node.left = ui.position.left + node.cluster.left + node.dragOffset.x
