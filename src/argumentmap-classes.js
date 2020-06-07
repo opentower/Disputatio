@@ -36,7 +36,7 @@ export class ArgumentMap extends HTMLElement {
         })
         this.style.zIndex = "2"
         this.surface.style.zIndex = "0"
-        this.style.outline = "1px solid"
+        this.style.border = "1px solid"
         this.style.display = 'inline-block'
         this.style.position = 'relative'
         this.style.overflow = 'hidden'
@@ -167,12 +167,12 @@ export class ArgumentMap extends HTMLElement {
 
     set focalNode(n) { 
         if (this.focalNode) {
-            this.focalNodeContents.style.outlineWidth = "1px"
+            this.focalNodeContents.style.borderWidth = "1px"
             this.focalNodeContents.classList.remove('focalNode')
         }
         this.focalNodeContents = n
         if (this.focalNode) {
-            this.focalNodeContents.style.outlineWidth = "2px"
+            this.focalNodeContents.style.borderWidth = "2px"
             this.focalNodeContents.classList.add('focalNode')
         }
     }
@@ -245,7 +245,7 @@ class GenericNode extends HTMLElement {
         this.outgoing = {} //initialize table of outgoing edges
         this.style.position = 'absolute'
         this.style.display= 'inline-block'
-        this.style.outline = '1px solid gray'
+        this.style.border = '1px solid gray'
         this.style.padding = '10px'
         this.top = y
         this.left = x
@@ -412,7 +412,9 @@ export class Cluster extends GenericNode {
         this.nodes[node.uuid] = node
 
         node.cluster = this
-        node.dragStart = _ => node.dragOffset = {x : node.offsetLeft, y : node.offsetTop}
+        node.dragStart = _ => {
+            node.dragOffset = {x : node.offsetLeft, y : node.offsetTop}
+        }
         node.dragStop = (e,ui) => { 
             if (this.map.contains(node).includes(this)) {
                 this.addNode(node) 
@@ -468,13 +470,13 @@ export class Cluster extends GenericNode {
     set valence(s) { 
         this.valenceContent = s 
         if (s == "pro") {
-            this.style.outlineColor = "green"
+            this.style.borderColor = "green"
             for (var key in this.outgoing) this.outgoing[key].color = "green"
         } else if (s == "con") {
-            this.style.outlineColor = "red"
+            this.style.borderColor = "red"
             for (var key in this.outgoing) this.outgoing[key].color = "red"
         } else {
-            this.style.outlineColor = "gray"
+            this.style.borderColor = "gray"
         }
         this.map.dispatchEvent(changed)
     }
