@@ -1,60 +1,21 @@
 var $ = require("jquery")
-var panzoom = require("panzoom")
-require("jquery-ui/ui/widgets/draggable")
-var RelativeLine = require("./graphical-classes")
+var Gen = require("./generic-map-classes")
 
-var changed = new Event('changed')
-
-export class ArgumentMap extends HTMLElement {
+export class ArgumentMap extends Gen.GenericMap {
     constructor() {
-        super();
-        this.surface = document.createElement("div")
-        this.focalNodeContent = null //initialize focal node content
-        this.nodes = {}              //initialize table of nodes
-        this.edges = {}              //initialize table of edges
-        this.history = []
-        this.future = []
-        this.present = JSON.stringify(this)
-        this.historyLock = false
-        this.svg = document.createElementNS("http://www.w3.org/2000/svg", 'svg')
-        this.getTrans = _ => { return this.zoom.getTransform() }
-        this.svg.getZoom = _ => { return this.zoom.getTransform().scale }
-        this.surface.style.width = "1px"
-        this.surface.style.height = "1px"
-        this.svg.style.width = "100%"
-        this.svg.style.height = "100%"
-        this.svg.style.position = "absolute"
-        this.svg.style.pointerEvents = "none"
-        this.svg.style.overflow = "visible"
-        this.svg.style.zIndex = "2"
-        this.appendChild(this.surface)
-        this.surface.appendChild(this.svg)
-        this.zoom = panzoom(this.surface, {
-            zoomSpeed: 0.1,
-            beforeWheel: e => { return !e.altKey },
-            beforeMouseDown: e => { return !e.altKey },
-        })
-        this.style.zIndex = "2"
-        this.surface.style.zIndex = "0"
-        this.style.border = "1px solid"
-        this.style.display = 'inline-block'
-        this.style.position = 'relative'
-        this.style.overflow = 'hidden'
-        this.addEventListener("changed", _ => this.updateHistory())
-        this.addEventListener('dragover', e => e.preventDefault())
+        super()
         this.addEventListener('drop', e => {
             e.preventDefault(); 
             let data = e.dataTransfer.getData("application/disputatio")
             let rect = this.surface.getBoundingClientRect()
-            let zoom = this.getTrans().scale
+            let zoom = this.transform.scale
             this.createAssertion((e.clientX - rect.left)/zoom,(e.clientY - rect.top)/zoom,
                 {value: data, immutable: true})
         })
-        $(this).on('drag', _ => this.redrawEdges() ) 
         this.addEventListener('click',e => { 
             if (e.target == this) { 
                 let rect = this.surface.getBoundingClientRect()
-                let zoom = this.getTrans().scale
+                let zoom = this.transform.scale
                 this.createAssertion((e.clientX - rect.left - 20)/zoom, (e.clientY - rect.top - 20)/zoom) 
             } 
             else if (this.focalNode && e.target.mapNode && e.shiftKey) { //holding shift makes the click manipulate arrows.
@@ -84,59 +45,23 @@ export class ArgumentMap extends HTMLElement {
         })
     }
 
-    updateHistory() {
-        setTimeout(_ => {
-            if (!this.historyLock) {
-                let present = JSON.stringify(this)
-                let change = this.present != present
-                if (change) { 
-                    this.history.push(this.present) 
-                    this.present = present
-                    console.log('updated')
-                }
-                this.future = [] //reset future
-                this.historyLock = true //lock history until timeout fires
-            }
-            clearTimeout(this.historyTimeout)
-            this.historyTimeout = setTimeout(_ => this.historyLock = false, 250)
-        }, 50) //timeout here to make sure updates are finished
+    createAssertion(x,y,config) { 
+        let node = new Assertion(this,x,y,config); 
+        this.focalNode = node
+        this.changed()
+        return node
     }
 
-    undo() { 
-        this.historyLock = true
-        this.clear()
-        if (this.history.length > 0) {
-            let past = this.history.pop()
-            this.future.push(this.present)
-            this.present = past
-            this.fromJSON(past)
-        } else { console.log("no history") }
-    }
-
-    redo() { 
-        this.historyLock = true
-        if (this.future.length > 0) {
-            this.clear()
-            let future = this.future.pop()
-            this.history.push(this.present)
-            this.present = future
-            this.fromJSON(future)
-        } else { console.log("no future") }
-    }
-
-    clear() { 
-        for (var key in this.edges) this.edges[key].remove()
-        while (this.lastChild.tagName != "svg") this.removeChild(this.lastChild)
-        this.edges = {}
-        this.nodes = {}
-    }
-
-    redrawEdges() { 
-        for (var key in this.edges) this.edges[key].updatePosition() 
+    createCluster(node) {
+        let cluster = new Cluster(this,node.left,node.top); 
+        cluster.addNode(node)
+        this.changed()
+        return cluster
     }
 
     fromJSON(json) {
         let obj = JSON.parse(json)
+        //recover assertions
         for (var key in obj.nodes) if (obj.nodes[key].role == "assertion") {
             let savednode = obj.nodes[key]
             new Assertion(this, savednode.left, savednode.top, savednode.config)
@@ -157,178 +82,9 @@ export class ArgumentMap extends HTMLElement {
         //refocus
         if (obj.focus) this.focalNode = this.nodes[obj.focus.config.uuid]
     }
-
-    toJSON () { 
-        return {
-            nodes: this.nodes,
-            focus: this.focalNode,
-        }
-    }
-
-    set focalNode(n) { 
-        if (this.focalNode) {
-            this.focalNodeContents.style.borderWidth = "1px"
-            this.focalNodeContents.classList.remove('focalNode')
-        }
-        this.focalNodeContents = n
-        if (this.focalNode) {
-            this.focalNodeContents.style.borderWidth = "2px"
-            this.focalNodeContents.classList.add('focalNode')
-        }
-    }
-
-    get focalNode() { return this.focalNodeContents }
-
-    createAssertion(x,y,config) { 
-        let node = new Assertion(this,x,y,config); 
-        this.focalNode = node
-        this.dispatchEvent(changed)
-        return node
-    }
-
-    createCluster(node) {
-        let cluster = new Cluster(this,node.left,node.top); 
-        cluster.addNode(node)
-        this.dispatchEvent(changed)
-        return cluster
-    }
-
-    createEdge(n1,n2) {
-        var line
-        if (n2.isClusterNode && n2.uniqueOutgoing) {
-            line = new RelativeLine(n1, n2.uniqueOutgoing.label, this.svg)
-        } else { 
-            line = new RelativeLine(n1, n2, this.svg)
-        }
-        line.uuid = Math.random().toString(36).substring(2) //generate unique identifier
-        this.edges[line.uuid] = line
-        n1.outgoing[n2.uuid] = line
-        n2.incoming[n1.uuid] = line
-        line.path.id = line.uuid
-        this.dispatchEvent(changed)
-    }
-
-    removeEdge(n1,n2) {
-        if (n1 && n2) {
-            let line = n1.outgoing[n2.uuid]
-            delete this.edges[line.uuid]
-            delete n1.outgoing[n2.uuid]
-            delete n2.incoming[n1.uuid]
-            line.remove()
-        }
-        this.dispatchEvent(changed)
-    }
-
-    contains(node) {
-        let containers = []
-        for (var key in this.nodes) {
-            let val = this.nodes[key]
-            let rect1 = val.getBoundingClientRect()
-            let rect2 = node.getBoundingClientRect()
-            if ((rect1.x < rect2.x) && (rect1.x + rect1.width > rect2.x)
-             && (rect1.y < rect2.y) && (rect1.y + rect1.height > rect2.y)
-             ) containers.push(val)
-        }
-        return containers
-    }
 }
 
-class GenericNode extends HTMLElement {
-    constructor(parent,x,y, config) {
-        super();
-        this.map = parent
-        if (!config) config = {}
-        if (config.uuid) this.uuid = config.uuid
-        else this.uuid = Math.random().toString(36).substring(2) //generate unique identifier
-        this.map.nodes[this.uuid] = this //register in the map
-        this.incoming = {} //initialize table of incoming edges
-        this.outgoing = {} //initialize table of outgoing edges
-        this.style.position = 'absolute'
-        this.style.display= 'inline-block'
-        this.style.border = '1px solid gray'
-        this.style.padding = '10px'
-        this.top = y
-        this.left = x
-
-        let bg = document.createElement("div");
-        bg.style.display = 'inline-block'
-        bg.style.position = 'absolute'
-        bg.style.background = 'white'
-        bg.style.top = 0
-        bg.style.left = 0
-        bg.style.height = '100%'
-        bg.style.width = '100%'
-        bg.mapNode = this
-
-        this.appendChild(bg);
-        this.attach(parent)
-        this.initDrag(1)
-        $(this).on("dragstop", _ => this.map.dispatchEvent(changed))
-    }
-
-    initDrag (translationFactor) { 
-        //need to reinitialize the drag object when reattaching the node
-        //when dragging, need to translate when attached to map, and not otherwise
-        $(this).draggable({
-            start: function(event, ui) {
-                ui.position.left = 0
-                ui.position.top = 0
-            },
-            drag: function(event, ui) {
-                var trans = this.map.getTrans()
-                var changeLeft = ui.position.left - (ui.originalPosition.left + (trans.x * translationFactor)); // find change in left
-                var newLeft = ui.originalPosition.left + changeLeft / trans.scale; // adjust new left by our zoomScale
-                var changeTop = ui.position.top - (ui.originalPosition.top + (trans.y * translationFactor)); // find change in top
-                var newTop = ui.originalPosition.top + changeTop / trans.scale; // adjust new top by our zoomScale
-                ui.position.left = newLeft;
-                ui.position.top = newTop;
-            }
-        });
-    };
-
-    clearOutgoing() { for (var key in this.outgoing) this.map.removeEdge(this,this.map.nodes[key]) }
-
-    clearIncoming() { for (var key in this.incoming) this.map.removeEdge(this.map.nodes[key],this) }
-
-    detach() {
-        this.clearOutgoing()
-        this.clearIncoming()
-        if (this.cluster) delete this.cluster.nodes[this.uuid]; //delete from nodes if in cluster
-        delete this.map.nodes[this.uuid] //delete from map
-        if (this.parentNode) this.parentNode.removeChild(this); //remove if parent exists
-        if (this.map.focalNode == this) this.map.focalNode = null
-    }
-
-    attach(parent) { parent.surface.appendChild(this); }
-
-    get top() { return parseInt(this.style.top) }
- 
-    set top(y) { this.style.top = y + "px" }
-
-    get left() { return parseInt(this.style.left) }
-
-    set left(x) { this.style.left = x + "px" }
-
-    set dragStart(f) { $(this).draggable("option","start",f) }
-
-    set dragStop(f) { $(this).draggable("option","stop",f) }
-
-    toJSON() { 
-        return { 
-            config: {
-                uuid: this.uuid,
-            },
-            incoming: Object.keys(this.incoming),
-            outgoing: Object.keys(this.outgoing),
-            top: this.top,
-            left: this.left,
-            role: "none",
-        }
-    }
-}
-
-export class Assertion extends GenericNode {
-
+export class Assertion extends Gen.GenericNode {
     constructor(parent,x,y,config) {
         super(parent,x,y,config)
         if (!config) config = {}
@@ -358,7 +114,7 @@ export class Assertion extends GenericNode {
                 this.input.style.height = 'auto'
                 this.input.cols = Math.min(15,Math.max(5,this.input.value.length))
                 this.input.style.height = this.input.scrollHeight + 'px'
-                this.inputTimeout = setTimeout(_ => this.map.dispatchEvent(changed),250) 
+                this.inputTimeout = setTimeout(_ => this.map.changed(),250) 
             })
         }
         this.appendChild(this.input);
@@ -383,7 +139,7 @@ export class Assertion extends GenericNode {
     }
 }
 
-export class Cluster extends GenericNode {
+export class Cluster extends Gen.GenericNode {
 
     constructor(parent,x,y,config) {
         super(parent,x,y,config);
@@ -398,8 +154,8 @@ export class Cluster extends GenericNode {
         this.observer.observe(this, {subtree:true, childList: true})
         this.clusterContents = document.createElement("div");
         this.style.zIndex = 1
-        $(this).on("dragstart",_ => this.style.zIndex = 50)
-        $(this).on("dragstop",_ => this.style.zIndex = 1)
+        $(this).on("dragstart", _ => this.style.zIndex = 50)
+        $(this).on("dragstop", _ => this.style.zIndex = 1)
         this.appendChild(this.clusterContents);
     }
     
@@ -437,7 +193,7 @@ export class Cluster extends GenericNode {
         }
         this.map.focalNode = this
         this.map.redrawEdges();
-        this.map.dispatchEvent(changed)
+        this.map.changed()
     }
 
     removeNode(node,ui) {
@@ -456,7 +212,7 @@ export class Cluster extends GenericNode {
             }
         }
         this.map.redrawEdges();
-        this.map.dispatchEvent(changed)
+        this.map.changed()
     }
 
     get uniqueOutgoing() {
@@ -478,7 +234,7 @@ export class Cluster extends GenericNode {
         } else {
             this.style.borderColor = "gray"
         }
-        this.map.dispatchEvent(changed)
+        this.map.changed()
     }
 
     updateIncoming() {

@@ -1,5 +1,5 @@
 var am_classes = require('./argumentmap-classes')
-var an_classes = require('./analysis-classes.js')
+var an_classes = require('./analysis-classes')
 var comparison = require('./comparison')
 
 export var subTest = comparison.subTest

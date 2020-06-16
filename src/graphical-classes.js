@@ -1,6 +1,6 @@
 class RelativeLine {
-    constructor(s,t,svg) {
-        this.svg = svg
+    constructor(s,t,map) {
+        this.map = map
         this.source = s
         this.target = t
         this.midpoint= document.createElementNS("http://www.w3.org/2000/svg", 'foreignObject');
@@ -15,20 +15,20 @@ class RelativeLine {
         this.midpoint.setAttribute("width","100px")
         this.midpoint.setAttribute("height","100px")
         this.head.style.strokeWidth = "5px";
-        svg.appendChild(this.path)
-        svg.appendChild(this.midpoint)
-        svg.appendChild(this.head)
+        this.map.svg.appendChild(this.path)
+        this.map.svg.appendChild(this.midpoint)
+        this.map.svg.appendChild(this.head)
         this.midpoint.appendChild(this.label)
         console.log(this.target)
         this.updatePosition()
     }
 
     updatePosition () {
-        let svgrect = this.svg.getBoundingClientRect()
+        let svgrect = this.map.svg.getBoundingClientRect()
         let srect = this.source.getBoundingClientRect()
         let trect = this.target.getBoundingClientRect()
         let zoom
-        if (this.svg.getZoom) { zoom = this.svg.getZoom() } else { zoom = 1 }
+        if (this.map.transform) { zoom = this.map.transform.scale } else { zoom = 1 }
         let origin = { x: (srect.x - svgrect.x + srect.width/2)/zoom
                      , y: (srect.y - svgrect.y + srect.height)/zoom }
         let destination = { x: (trect.x - svgrect.x + trect.width/2)/zoom
@@ -45,9 +45,9 @@ class RelativeLine {
     }
 
     remove() { 
-        this.svg.removeChild(this.path)
-        this.svg.removeChild(this.midpoint) 
-        this.svg.removeChild(this.head) 
+        this.map.svg.removeChild(this.path)
+        this.map.svg.removeChild(this.midpoint) 
+        this.map.svg.removeChild(this.head) 
     }
 
     set color (c) { 
