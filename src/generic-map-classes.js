@@ -21,7 +21,8 @@ export class GenericMap extends HTMLElement {
         this.present = JSON.stringify(this)
         this.historyLock = false
         this.svg = document.createElementNS("http://www.w3.org/2000/svg", 'svg')
-        this.surface.style.width = "1px"
+        this.surface.style.width = "10000px" //setting this too narrow creates visual glitches, 
+                                             //e.g. forcing assertions into a vertical stack
         this.surface.style.height = "1px"
         this.svg.style.width = "100%"
         this.svg.style.height = "100%"
