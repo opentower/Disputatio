@@ -115,8 +115,10 @@ export class Assertion extends Gen.GenericNode {
         this.input.focus()
         this.dragStop = _ => { 
             for (var v of this.map.contains(this)) {
-                if (v.isClusterNode) { v.addNode(this); break }
-                else if (v.isAssertion) { this.map.createCluster(v).addNode(this); break}
+                if (v.isClusterNode) { v.addNode(this); return}
+            }
+            for (var v of this.map.contains(this)) {
+                if (v.isAssertion) { this.map.createCluster(v).addNode(this); return}
             }
         }
     }
@@ -198,8 +200,11 @@ export class Cluster extends Gen.GenericNode {
         node.cluster = null
         delete this.nodes[node.uuid] //delete from node list
         node.dragStop = _ => { 
-            for (var v of this.map.contains(node)) { 
-                if (v.isClusterNode) {v.addNode(node); break}
+            for (var v of node.map.contains(node)) { 
+                if (v.isClusterNode) { v.addNode(node); return }
+            }
+            for (var v of node.map.contains(node)) { 
+                if (v.isAssertion) { node.map.createCluster(v).addNode(node); return}
             }
         }
         this.map.redrawEdges();
