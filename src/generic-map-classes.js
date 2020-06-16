@@ -91,7 +91,7 @@ export class GenericMap extends HTMLElement {
 
     clear() { 
         for (var key in this.edges) this.edges[key].remove()
-        while (this.lastChild.tagName != "svg") this.removeChild(this.lastChild)
+        while (this.surface.lastChild.tagName != "svg") this.surface.removeChild(this.surface.lastChild)
         this.edges = {}
         this.nodes = {}
     }
