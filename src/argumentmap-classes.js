@@ -1,48 +1,38 @@
 var $ = require("jquery")
 var Gen = require("./generic-map-classes")
 
-export class ArgumentMap extends Gen.GenericMap {
-    constructor() {
-        super()
-        this.addEventListener('drop', e => {
-            e.preventDefault(); 
-            let data = e.dataTransfer.getData("application/disputatio")
-            let rect = this.surface.getBoundingClientRect()
-            let zoom = this.transform.scale
-            this.createAssertion((e.clientX - rect.left)/zoom,(e.clientY - rect.top)/zoom,
-                {value: data, immutable: true})
-        })
-        this.addEventListener('click',e => { 
-            if (e.target == this) { 
-                let rect = this.surface.getBoundingClientRect()
-                let zoom = this.transform.scale
-                this.createAssertion((e.clientX - rect.left - 20)/zoom, (e.clientY - rect.top - 20)/zoom) 
+class DebateMap extends Gen.GenericMap {
+
+    constructor() { 
+        super() 
+        this.addEventListener('click',this.handleClick)
+    }
+
+    handleClick(e) {
+        if (this.focalNode && e.target.mapNode && e.shiftKey) { //holding shift makes the click manipulate arrows.
+            let targetNode = e.target.mapNode
+            if (targetNode.uuid in this.focalNode.outgoing) { //turn support into denial
+                if (this.focalNode.valence == "pro") {
+                    this.focalNode.valence = "con"
+                } else { //or remove denial
+                    this.removeEdge(this.focalNode,targetNode)
+                    this.focalNode.valence = null
+                }
+            } else if (targetNode != this.focalNode) { //otherwise draw an arrow if the target is eligible
+                if (this.focalNode.isAssertion) {
+                    this.focalNode = this.createCluster(this.focalNode)
+                    this.createEdge(this.focalNode, targetNode)
+                    this.focalNode.valence = "pro"
+                } else if (this.focalNode.isClusterNode && targetNode.cluster != this.focalNode ) {
+                    this.focalNode.clearOutgoing()
+                    this.createEdge(this.focalNode, targetNode)
+                    this.focalNode.valence = "pro"
+                }
             } 
-            else if (this.focalNode && e.target.mapNode && e.shiftKey) { //holding shift makes the click manipulate arrows.
-                let targetNode = e.target.mapNode
-                if (targetNode.uuid in this.focalNode.outgoing) { //turn support into denial
-                    if (this.focalNode.valence == "pro") {
-                        this.focalNode.valence = "con"
-                    } else { //or remove denial
-                        this.removeEdge(this.focalNode,targetNode)
-                        this.focalNode.valence = null
-                    }
-                } else if (targetNode != this.focalNode) { //otherwise draw an arrow if the target is eligible
-                    if (this.focalNode.isAssertion) {
-                        this.focalNode = this.createCluster(this.focalNode)
-                        this.createEdge(this.focalNode, targetNode)
-                        this.focalNode.valence = "pro"
-                    } else if (this.focalNode.isClusterNode && targetNode.cluster != this.focalNode ) {
-                        this.focalNode.clearOutgoing()
-                        this.createEdge(this.focalNode, targetNode)
-                        this.focalNode.valence = "pro"
-                    }
-                } 
-                this.focalNode.updateIncoming()
-            } else if (e.target.mapNode.parentNode == this.surface) { //without shift, click updates focus
-                this.focalNode = e.target.mapNode
-            }
-        })
+            this.focalNode.updateIncoming()
+        } else if (e.target.mapNode && (e.target.mapNode.parentNode == this.surface)) { //without shift, click updates focus
+            this.focalNode = e.target.mapNode
+        }
     }
 
     createAssertion(x,y,config) { 
@@ -250,5 +240,32 @@ export class Cluster extends Gen.GenericNode {
         obj.nodes = Object.keys(this.nodes)
         obj.valence = this.valence
         return obj
+    }
+}
+
+export class ScaffoldedDebateMap extends DebateMap {
+    constructor() { 
+        super() 
+        this.addEventListener('drop', e => {
+            e.preventDefault(); 
+            let data = e.dataTransfer.getData("application/disputatio")
+            let rect = this.surface.getBoundingClientRect()
+            let zoom = this.transform.scale
+            this.createAssertion((e.clientX - rect.left)/zoom,(e.clientY - rect.top)/zoom,
+                {value: data, immutable: true})
+        })
+    }
+}
+
+export class FreeformDebateMap extends DebateMap {
+    constructor() { super() }
+
+    handleClick (e) {
+        if (e.target == this) { 
+            let rect = this.surface.getBoundingClientRect()
+            let zoom = this.transform.scale
+            this.createAssertion((e.clientX - rect.left - 20)/zoom, (e.clientY - rect.top - 20)/zoom) 
+        } 
+        else { super.handleClick(e) }
     }
 }
