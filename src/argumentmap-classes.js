@@ -115,7 +115,8 @@ export class Assertion extends Gen.GenericNode {
         this.input.focus()
         this.dragStop = _ => { 
             for (var v of this.map.contains(this)) {
-                if (v.isClusterNode) {v.addNode(this); break}
+                if (v.isClusterNode) { v.addNode(this); break }
+                else if (v.isAssertion) { this.map.createCluster(v).addNode(this); break}
             }
         }
     }
