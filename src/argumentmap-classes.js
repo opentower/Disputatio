@@ -168,25 +168,30 @@ export class Cluster extends Gen.GenericNode {
             if (this.map.contains(node).includes(this)) {
                 this.addNode(node) 
             } else {
-                let unbroken = true
                 for (var v of this.map.contains(node)) {
                     if (v.isClusterNode) {
                         this.removeNode(node)
                         v.addNode(node)
                         this.map.focalNode = v
-                        unbroken = false
-                        break
+                        return
                     }
                 }
-                if (unbroken) { 
-                    this.removeNode(node,ui)
-                    this.map.focalNode = node
+                for (var v of this.map.contains(node)) { 
+                    if (v.isAssertion) { 
+                        this.removeNode(node)
+                        let cluster = node.map.createCluster(v)
+                        cluster.addNode(node)
+                        this.map.focalNode = cluster
+                        return
+                    }
                 }
+                this.removeNode(node,ui)
+                this.map.focalNode = node
             }
+            this.map.focalNode = this
+            this.map.redrawEdges();
+            this.map.changed()
         }
-        this.map.focalNode = this
-        this.map.redrawEdges();
-        this.map.changed()
     }
 
     removeNode(node,ui) {
