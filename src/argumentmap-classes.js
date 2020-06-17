@@ -11,11 +11,12 @@ class DebateMap extends Gen.GenericMap {
     handleClick(e) {
         if (this.focalNode && e.target.mapNode && e.shiftKey) { //holding shift makes the click manipulate arrows.
             let targetNode = e.target.mapNode
-            if (targetNode.uuid in this.focalNode.outgoing) { //turn support into denial
-                if (this.focalNode.valence == "pro") {
+            if (targetNode.uuid in this.focalNode.outgoing) { 
+                if (this.focalNode.valence == "pro") { //turn support into denial
                     this.focalNode.valence = "con"
-                } else { //or remove denial
-                    this.removeEdge(this.focalNode,targetNode)
+                } else { 
+                    this.removeEdge(this.focalNode,targetNode) //or remove denial
+                    this.focalNode.clearIncoming() //also remove incoming edges
                     this.focalNode.valence = null
                 }
             } else if (targetNode != this.focalNode) { //otherwise draw an arrow if the target is eligible
@@ -24,7 +25,8 @@ class DebateMap extends Gen.GenericMap {
                     this.createEdge(this.focalNode, targetNode)
                     this.focalNode.valence = "pro"
                 } else if (this.focalNode.isClusterNode && targetNode.cluster != this.focalNode ) {
-                    this.focalNode.clearOutgoing()
+                    this.focalNode.clearOutgoing() //remove old outgoing
+                    this.focalNode.clearIncoming() //also remove incoming edges
                     this.createEdge(this.focalNode, targetNode)
                     this.focalNode.valence = "pro"
                 }
