@@ -113,13 +113,15 @@ export class Assertion extends Gen.GenericNode {
             if (this.input.value == "") this.detach() 
         })
         this.input.focus()
-        this.dragStop = _ => { 
-            for (var v of this.map.contains(this)) {
-                if (v.isClusterNode) { v.addNode(this); return}
-            }
-            for (var v of this.map.contains(this)) {
-                if (v.isAssertion) { this.map.createCluster(v).addNode(this); return}
-            }
+        this.dragStop = this.dragStopDefault
+    }
+
+    dragStopDefault() {
+        for (var v of this.map.contains(this)) {
+            if (v.isClusterNode) { v.addNode(this); return}
+        }
+        for (var v of this.map.contains(this)) {
+            if (v.isAssertion) { this.map.createCluster(v).addNode(this); return}
         }
     }
 
@@ -204,14 +206,7 @@ export class Cluster extends Gen.GenericNode {
         }
         node.cluster = null
         delete this.nodes[node.uuid] //delete from node list
-        node.dragStop = _ => { 
-            for (var v of node.map.contains(node)) { 
-                if (v.isClusterNode) { v.addNode(node); return }
-            }
-            for (var v of node.map.contains(node)) { 
-                if (v.isAssertion) { node.map.createCluster(v).addNode(node); return}
-            }
-        }
+        node.dragStop = node.dragStopDefault
         this.map.redrawEdges();
         this.map.changed()
     }
@@ -255,6 +250,7 @@ export class Cluster extends Gen.GenericNode {
 }
 
 export class ScaffoldedDebateMap extends DebateMap {
+
     constructor() { 
         super() 
         this.addEventListener('drop', e => {
@@ -269,6 +265,7 @@ export class ScaffoldedDebateMap extends DebateMap {
 }
 
 export class FreeformDebateMap extends DebateMap {
+
     constructor() { super() }
 
     handleClick (e) {
