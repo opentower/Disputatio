@@ -37,13 +37,6 @@ class DebateMap extends Gen.GenericMap {
         }
     }
 
-    createAssertion(x,y,config) { 
-        let node = new Assertion(this,x,y,config); 
-        this.focalNode = node
-        this.changed()
-        return node
-    }
-
     createCluster(node) {
         let cluster = new Cluster(this,node.left,node.top); 
         cluster.addNode(node)
@@ -52,12 +45,8 @@ class DebateMap extends Gen.GenericMap {
     }
 
     fromJSON(json) {
+        //child class should do the work of recovering the assertions
         let obj = JSON.parse(json)
-        //recover assertions
-        for (var key in obj.nodes) if (obj.nodes[key].role == "assertion") {
-            let savednode = obj.nodes[key]
-            new Assertion(this, savednode.left, savednode.top, savednode.config)
-        }
         // cluster them
         for (var key in obj.nodes) if (obj.nodes[key].role == "cluster") {
             let savednode = obj.nodes[key]
@@ -78,44 +67,19 @@ class DebateMap extends Gen.GenericMap {
 
 export class Assertion extends Gen.GenericNode {
     constructor(parent,x,y,config) {
-        super(parent,x,y,config)
         if (!config) config = {}
+        super(parent,x,y,config)
         this.style.zIndex = 5
         $(this).on("dragstart",_=> this.style.zIndex = 50)
         $(this).on("dragstop",_=> this.style.zIndex = 5)
         this.isAssertion = true
-        this.inputTimeout = false
+        this.dragStop = this.dragStopDefault
         this.input = document.createElement("textarea");
         this.input.style.position = 'relative'
         this.input.cols = 5
         this.input.rows = 1
         this.input.style.border = 'none'
         this.input.mapNode = this
-        if (config.value) {
-            this.input.value = config.value
-            this.input.cols = Math.min(15,Math.max(5,config.value.length))
-        }
-        if (config.immutable) {
-            this.addEventListener('keydown', e => {
-                if (e.key == "Backspace") this.detach()
-                e.preventDefault() 
-            })
-        } else {
-            this.input.addEventListener('input', e => {
-                clearTimeout(this.inputTimeout)
-                this.input.style.height = 'auto'
-                this.input.cols = Math.min(15,Math.max(5,this.input.value.length))
-                this.input.style.height = this.input.scrollHeight + 'px'
-                this.inputTimeout = setTimeout(_ => this.map.changed(),250) 
-            })
-        }
-        this.appendChild(this.input);
-        this.input.style.height = this.input.scrollHeight + 'px'
-        this.input.addEventListener('focusout', _ => { 
-            if (this.input.value == "") this.detach() 
-        })
-        this.input.focus()
-        this.dragStop = this.dragStopDefault
     }
 
     dragStopDefault() {
@@ -131,8 +95,51 @@ export class Assertion extends Gen.GenericNode {
         let obj = super.toJSON()
         obj.role = "assertion"
         obj.config.value = this.input.value
-        obj.config.immutable = this.input.disabled
         return obj
+    }
+}
+
+
+export class MutableAssertion extends Assertion {
+    constructor(parent,x,y,config) {
+        super(parent,x,y,config)
+        if (!config) config = {}
+        if (config.value) {
+            this.input.value = config.value
+            this.input.cols = Math.min(15,Math.max(5,config.value.length))
+        } else {
+            this.input.addEventListener('input', e => {
+                clearTimeout(this.inputTimeout)
+                this.input.style.height = 'auto'
+                this.input.cols = Math.min(15,Math.max(5,this.input.value.length))
+                this.input.style.height = this.input.scrollHeight + 'px'
+                this.inputTimeout = setTimeout(_ => this.map.changed(),250) 
+            })
+        }
+        this.appendChild(this.input);
+        this.input.style.height = this.input.scrollHeight + 'px'
+        this.input.addEventListener('focusout', _ => { 
+            if (this.input.value == "") this.detach() 
+        })
+        this.input.focus()
+    }
+}
+
+export class ImmutableAssertion extends Assertion {
+    constructor(parent,x,y,config) {
+        super(parent,x,y,config)
+        if (!config) config = {}
+        if (config.value) {
+            this.input.value = config.value
+            this.input.cols = Math.min(15,Math.max(5, config.value.length))
+        }
+        this.addEventListener('keydown', e => {
+            if (e.key == "Backspace") this.detach()
+            e.preventDefault() 
+        })
+        this.appendChild(this.input);
+        this.input.style.height = this.input.scrollHeight + 'px'
+        this.input.focus()
     }
 }
 
@@ -260,9 +267,24 @@ export class ScaffoldedDebateMap extends DebateMap {
             let data = e.dataTransfer.getData("application/disputatio")
             let rect = this.surface.getBoundingClientRect()
             let zoom = this.transform.scale
-            this.createAssertion((e.clientX - rect.left)/zoom,(e.clientY - rect.top)/zoom,
-                {value: data, immutable: true})
+            this.createAssertion((e.clientX - rect.left)/zoom, (e.clientY - rect.top)/zoom, {value: data})
         })
+    }
+
+    createAssertion(x,y,config) { 
+        let node = new ImmutableAssertion(this,x,y,config); 
+        this.focalNode = node
+        this.changed()
+        return node
+    }
+
+    fromJSON(json) {
+        let obj = JSON.parse(json)
+        for (var key in obj.nodes) if (obj.nodes[key].role == "assertion") {
+            let savednode = obj.nodes[key]
+            new ImmutableAssertion(this, savednode.left, savednode.top, savednode.config)
+        }
+        super.fromJSON(json)
     }
 }
 
@@ -277,5 +299,21 @@ export class FreeformDebateMap extends DebateMap {
             this.createAssertion((e.clientX - rect.left - 20)/zoom, (e.clientY - rect.top - 20)/zoom) 
         } 
         else { super.handleClick(e) }
+    }
+
+    createAssertion(x,y,config) { 
+        let node = new MutableAssertion(this,x,y,config); 
+        this.focalNode = node
+        this.changed()
+        return node
+    }
+
+    fromJSON(json) {
+        let obj = JSON.parse(json)
+        for (var key in obj.nodes) if (obj.nodes[key].role == "assertion") {
+            let savednode = obj.nodes[key]
+            new MutableAssertion(this, savednode.left, savednode.top, savednode.config)
+        }
+        super.fromJSON(json)
     }
 }
