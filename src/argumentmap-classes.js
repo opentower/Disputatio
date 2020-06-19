@@ -167,7 +167,10 @@ export class Cluster extends Gen.GenericNode {
         this.clusterContents = document.createElement("div");
         this.style.zIndex = 1
         $(this).on("dragstart", _ => this.style.zIndex = 50)
-        $(this).on("dragstop", _ => this.style.zIndex = 1)
+        $(this).on("dragstop", _ => { 
+            this.style.zIndex = 1
+            this.repel()
+        })
         this.appendChild(this.clusterContents);
     }
 
