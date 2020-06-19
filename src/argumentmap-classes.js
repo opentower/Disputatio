@@ -90,6 +90,13 @@ export class Assertion extends Gen.GenericNode {
             if (v.isAssertion) { this.map.createCluster(v).addNode(this); return}
         }
     }
+    
+    repel() { 
+        super.repel(val => {
+            if (this.cluster) { return val != this.cluster } // do not repel your own cluster
+            else { return !val.cluster } // only repel unclustered nodes
+        })
+    }
 
     toJSON() {
         let obj = super.toJSON()
@@ -97,6 +104,7 @@ export class Assertion extends Gen.GenericNode {
         obj.config.value = this.input.value
         return obj
     }
+
 }
 
 
@@ -152,25 +160,26 @@ export class Cluster extends Gen.GenericNode {
         this.isClusterNode = true
         this.valenceContent = null
 
-        this.observer = new MutationObserver(t => {
+        this.emptyObserver = new MutationObserver(t => {
             if (Object.keys(this.nodes).length == 0) this.detach() 
         })
-        this.observer.observe(this, {subtree:true, childList: true})
+        this.emptyObserver.observe(this, {subtree:true, childList: true})
         this.clusterContents = document.createElement("div");
         this.style.zIndex = 1
         $(this).on("dragstart", _ => this.style.zIndex = 50)
         $(this).on("dragstop", _ => this.style.zIndex = 1)
         this.appendChild(this.clusterContents);
     }
-    
+
     addNode(node) {
         this.clusterContents.appendChild(node)
-        node.style.position = "relative"
-        node.top = 0
+        this.map.focalNode = this
+        //relativize position and drag behavior
+        node.style.position = "relative" 
+        node.top = 0 
         node.left = 0
         node.initDrag(0)
-        this.nodes[node.uuid] = node
-
+        this.nodes[node.uuid] = node //add to node list
         node.cluster = this
         node.dragStart = _ => {
             node.dragOffset = {x : node.offsetLeft, y : node.offsetTop}
@@ -183,7 +192,6 @@ export class Cluster extends Gen.GenericNode {
                     if (v.isClusterNode) {
                         this.removeNode(node)
                         v.addNode(node)
-                        this.map.focalNode = v
                         return
                     }
                 }
@@ -192,7 +200,7 @@ export class Cluster extends Gen.GenericNode {
                         this.removeNode(node)
                         let cluster = node.map.createCluster(v)
                         cluster.addNode(node)
-                        this.map.focalNode = cluster
+                        
                         return
                     }
                 }
@@ -248,6 +256,9 @@ export class Cluster extends Gen.GenericNode {
         else { target = this }
         for (var key in this.incoming) this.incoming[key].end = target
     }
+
+    //only reply unclustered nodes
+    repel() { super.repel(val => { return !val.cluster }) }
 
     toJSON () {
         let obj = super.toJSON()

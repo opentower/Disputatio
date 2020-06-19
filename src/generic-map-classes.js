@@ -183,6 +183,8 @@ export class GenericNode extends HTMLElement {
         this.map.nodes[this.uuid] = this //register in the map
         this.incoming = {} //initialize table of incoming edges
         this.outgoing = {} //initialize table of outgoing edges
+        this.resizeObserver = new ResizeObserver(_ => this.repel())
+        this.resizeObserver.observe(this)
         this.style.position = 'absolute'
         this.style.display= 'inline-block'
         this.style.border = '1px solid gray'
@@ -239,12 +241,13 @@ export class GenericNode extends HTMLElement {
         if (this.map.focalNode == this) this.map.focalNode = null
     }
 
-    repel() {
+    repel(filter) {
+        if (!filter) filter = _ => {return true}
         let rect = this.getBoundingClientRect()
         for (var key in this.map.nodes) {
             let val = this.map.nodes[key]
             let rect1 = val.getBoundingClientRect()
-            if (overlap(rect,rect1)) {
+            if (filter(val) && overlap(rect,rect1)) {
                 if (rect1.x + (rect1.width/2) > rect.x + (rect.width/2)) val.left = val.left + 50
                 else val.left = (val.left - 50)
                 val.repel()
