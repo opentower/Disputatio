@@ -93,7 +93,8 @@ export class Assertion extends Gen.GenericNode {
     
     repel() { 
         super.repel(val => {
-            if (this.cluster) { return val != this.cluster } // do not repel your own cluster
+            if (this.cluster && val.cluster) { val.cluster != this.cluster } // do not repel your own siblings
+            else if (this.cluster) { return val != this.cluster } //or your own cluster
             else { return !val.cluster } // only repel unclustered nodes
         })
     }
@@ -327,6 +328,58 @@ export class FreeformDebateMap extends DebateMap {
         for (var key in obj.nodes) if (obj.nodes[key].role == "assertion") {
             let savednode = obj.nodes[key]
             new MutableAssertion(this, savednode.left, savednode.top, savednode.config)
+        }
+        super.fromJSON(json)
+    }
+}
+
+export class KeyboardFreeformDebateMap extends DebateMap {
+
+    constructor() { super() }
+
+    createAssertion(x,y,config) { 
+        let node = new MutableAssertion(this,x,y,config); 
+        this.addBinds(node)
+        this.focalNode = node
+        this.changed()
+        return node
+    }
+
+    addBinds(node) {
+        node.addEventListener('keydown', e => {
+            let rect = node.getBoundingClientRect()
+            let pos
+            if (e.key == "Tab") {
+                if (node.cluster) pos = node.cluster // if the node is clustered, we use that for positioning
+                else pos = node
+                let statement = this.createAssertion((pos.left + rect.width + 50), pos.top , {})
+                if (node.cluster) {
+                    node.cluster.addNode(statement)
+                    node.cluster.repel() 
+                    statement.input.focus()
+                } else { statement.repel() }
+                e.preventDefault() 
+            }
+            if (e.key == "Enter") {
+                if (node.cluster)  pos = node.cluster  // if the node is clustered, we use that for positioning
+                else pos = node
+                let support = this.createAssertion(pos.left - 10, pos.top - 200, {})
+                this.focalNode = this.createCluster(support)
+                this.createEdge(this.focalNode, node)
+                this.focalNode.valence = "pro"
+                this.focalNode.repel()
+                support.input.focus()
+                e.preventDefault() 
+            }
+        })
+    }
+
+    fromJSON(json) {
+        let obj = JSON.parse(json)
+        for (var key in obj.nodes) if (obj.nodes[key].role == "assertion") {
+            let savednode = obj.nodes[key]
+            let node = new MutableAssertion(this, savednode.left, savednode.top, savednode.config)
+            this.addBinds(node)
         }
         super.fromJSON(json)
     }

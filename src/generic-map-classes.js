@@ -8,8 +8,8 @@ var RelativeLine = require("./graphical-classes")
 var changed = new Event('changed')
 
 //These functions are used in calculating overlap
-function leftOverlap (r1,r2) {return (r1.x < r2.x) && (r1.x + r1.width > r2.x)}
-function topOverlap (r1,r2) {return (r1.y < r2.y) && (r1.y + r1.height> r2.y)}
+function leftOverlap (r1,r2) {return (r1.x <= r2.x) && (r1.x + r1.width >= r2.x)}
+function topOverlap (r1,r2) {return (r1.y <= r2.y) && (r1.y + r1.height >= r2.y)}
 function overlap (r1,r2) {
     return (leftOverlap(r1,r2) || leftOverlap(r2,r1))
         && (topOverlap(r1,r2)  || topOverlap(r2,r1))
@@ -167,7 +167,7 @@ export class GenericMap extends HTMLElement {
         for (var key in this.nodes) {
             let val = this.nodes[key]
             let rect1 = val.getBoundingClientRect()
-            if (overlap(rect,rect1)) containers.push(val)
+            if (overlap(rect,rect1) && val != node) containers.push(val)
         }
         return containers
     }
@@ -247,12 +247,13 @@ export class GenericNode extends HTMLElement {
         for (var key in this.map.nodes) {
             let val = this.map.nodes[key]
             let rect1 = val.getBoundingClientRect()
-            if (filter(val) && overlap(rect,rect1)) {
+            if (filter(val) && val != this && overlap(rect,rect1)) {
                 if (rect1.x + (rect1.width/2) > rect.x + (rect.width/2)) val.left = val.left + 50
                 else val.left = (val.left - 50)
                 val.repel()
             }
         }
+        this.map.redrawEdges()
     }
 
     attach(parent) { parent.surface.appendChild(this); }
