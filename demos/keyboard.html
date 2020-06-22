@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width" />
+        <title>Keyboard Test</title>
+        <script charset="utf-8">
+            function load_it() {
+                var g = document.getElementById('theGraph')
+                g.fromJSON('{"nodes":{"x98813lt8ip":{"config":{"uuid":"x98813lt8ip","value":" "},"incoming":[],"outgoing":[],"top":293,"left":296,"role":"assertion"}},"focus":{"config":{"uuid":"x98813lt8ip","value":" "},"incoming":[],"outgoing":[],"top":293,"left":296,"role":"assertion"}}')
+            }
+        </script>
+    </head>
+    <body >
+        <disputatio-keyboard-map id="theGraph" style="width:1200px;height:500px">
+        </disputatio-keyboard-map>
+        <script src="../dist/main.js"></script>
+        <div>
+            <button onclick="document.getElementById('theGraph').undo()">undo</button>
+            <button onclick="document.getElementById('theGraph').redo()">redo</button>
+            <button onclick="load_it()">reset</button>
+        </div>
+        <script>load_it()</script>
+    </body>
+</html>

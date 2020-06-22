@@ -3,7 +3,17 @@ var panzoom = require("panzoom")
 require("jquery-ui/ui/widgets/draggable")
 var RelativeLine = require("./graphical-classes")
 
+// This is an event to track changes, used for example is pushing to the undo
+// stack.
 var changed = new Event('changed')
+
+//These functions are used in calculating overlap
+function leftOverlap (r1,r2) {return (r1.x <= r2.x) && (r1.x + r1.width >= r2.x)}
+function topOverlap (r1,r2) {return (r1.y <= r2.y) && (r1.y + r1.height >= r2.y)}
+function overlap (r1,r2) {
+    return (leftOverlap(r1,r2) || leftOverlap(r2,r1))
+        && (topOverlap(r1,r2)  || topOverlap(r2,r1))
+}
 
 // This is a buildingblock class for various graph widgets, with edges and
 // node-focus. It provides mechanisms for tracking and maintaining state,
@@ -58,7 +68,6 @@ export class GenericMap extends HTMLElement {
                 if (change) { 
                     this.history.push(this.present) 
                     this.present = present
-                    console.log('updated')
                 }
                 this.future = [] //reset future
                 this.historyLock = true //lock history until timeout fires
@@ -154,13 +163,11 @@ export class GenericMap extends HTMLElement {
 
     contains(node) {
         let containers = []
+        let rect = node.getBoundingClientRect()
         for (var key in this.nodes) {
             let val = this.nodes[key]
             let rect1 = val.getBoundingClientRect()
-            let rect2 = node.getBoundingClientRect()
-            if ((rect1.x < rect2.x) && (rect1.x + rect1.width > rect2.x)
-             && (rect1.y < rect2.y) && (rect1.y + rect1.height > rect2.y)
-             ) containers.push(val)
+            if (overlap(rect,rect1) && val != node) containers.push(val)
         }
         return containers
     }
@@ -176,6 +183,8 @@ export class GenericNode extends HTMLElement {
         this.map.nodes[this.uuid] = this //register in the map
         this.incoming = {} //initialize table of incoming edges
         this.outgoing = {} //initialize table of outgoing edges
+        this.resizeObserver = new ResizeObserver(_ => this.repel())
+        this.resizeObserver.observe(this)
         this.style.position = 'absolute'
         this.style.display= 'inline-block'
         this.style.border = '1px solid gray'
@@ -196,7 +205,7 @@ export class GenericNode extends HTMLElement {
         this.appendChild(bg);
         this.attach(parent)
         this.initDrag(1)
-        $(this).on("dragstop", _ => this.map.changed() )
+        $(this).on("dragstop", _ => { this.map.changed() })
     }
 
     initDrag (translationFactor) { 
@@ -230,6 +239,21 @@ export class GenericNode extends HTMLElement {
         delete this.map.nodes[this.uuid] //delete from map
         if (this.parentNode) this.parentNode.removeChild(this); //remove if parent exists
         if (this.map.focalNode == this) this.map.focalNode = null
+    }
+
+    repel(filter) {
+        if (!filter) filter = _ => {return true}
+        let rect = this.getBoundingClientRect()
+        for (var key in this.map.nodes) {
+            let val = this.map.nodes[key]
+            let rect1 = val.getBoundingClientRect()
+            if (filter(val) && val != this && overlap(rect,rect1)) {
+                if (rect1.x + (rect1.width/2) > rect.x + (rect.width/2)) val.left = val.left + 50
+                else val.left = (val.left - 50)
+                val.repel()
+            }
+        }
+        this.map.redrawEdges()
     }
 
     attach(parent) { parent.surface.appendChild(this); }

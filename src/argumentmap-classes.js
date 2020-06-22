@@ -37,13 +37,6 @@ class DebateMap extends Gen.GenericMap {
         }
     }
 
-    createAssertion(x,y,config) { 
-        let node = new Assertion(this,x,y,config); 
-        this.focalNode = node
-        this.changed()
-        return node
-    }
-
     createCluster(node) {
         let cluster = new Cluster(this,node.left,node.top); 
         cluster.addNode(node)
@@ -52,12 +45,8 @@ class DebateMap extends Gen.GenericMap {
     }
 
     fromJSON(json) {
+        //child class should do the work of recovering the assertions
         let obj = JSON.parse(json)
-        //recover assertions
-        for (var key in obj.nodes) if (obj.nodes[key].role == "assertion") {
-            let savednode = obj.nodes[key]
-            new Assertion(this, savednode.left, savednode.top, savednode.config)
-        }
         // cluster them
         for (var key in obj.nodes) if (obj.nodes[key].role == "cluster") {
             let savednode = obj.nodes[key]
@@ -78,28 +67,70 @@ class DebateMap extends Gen.GenericMap {
 
 export class Assertion extends Gen.GenericNode {
     constructor(parent,x,y,config) {
-        super(parent,x,y,config)
         if (!config) config = {}
+        super(parent,x,y,config)
+        if (config.implicit) this.implicit = true
+        else this.implicit = false
         this.style.zIndex = 5
         $(this).on("dragstart",_=> this.style.zIndex = 50)
         $(this).on("dragstop",_=> this.style.zIndex = 5)
         this.isAssertion = true
-        this.inputTimeout = false
+        this.dragStop = this.dragStopDefault
         this.input = document.createElement("textarea");
         this.input.style.position = 'relative'
         this.input.cols = 5
         this.input.rows = 1
         this.input.style.border = 'none'
         this.input.mapNode = this
+    }
+
+    set implicit (val) { 
+        if (val) {
+            this.style.borderStyle = "dashed"
+            this.implicitContent = true
+        } else {
+            this.style.borderStyle = "solid"
+            this.implicitContent = false
+        }
+    }
+
+    get implicit () { return this.implicitContent }
+
+    dragStopDefault() {
+        for (var v of this.map.contains(this)) {
+            if (v.isClusterNode) { v.addNode(this); return}
+        }
+        for (var v of this.map.contains(this)) {
+            if (v.isAssertion) { this.map.createCluster(v).addNode(this); return}
+        }
+    }
+    
+    repel() { 
+        super.repel(val => {
+            if (this.cluster && val.cluster) { val.cluster != this.cluster } // do not repel your own siblings
+            else if (this.cluster) { return val != this.cluster } //or your own cluster
+            else { return !val.cluster } // only repel unclustered nodes
+        })
+    }
+
+    toJSON() {
+        let obj = super.toJSON()
+        obj.role = "assertion"
+        obj.config.value = this.input.value
+        obj.config.implicit = this.implicit
+        return obj
+    }
+
+}
+
+
+export class MutableAssertion extends Assertion {
+    constructor(parent,x,y,config) {
+        super(parent,x,y,config)
+        if (!config) config = {}
         if (config.value) {
             this.input.value = config.value
             this.input.cols = Math.min(15,Math.max(5,config.value.length))
-        }
-        if (config.immutable) {
-            this.addEventListener('keydown', e => {
-                if (e.key == "Backspace") this.detach()
-                e.preventDefault() 
-            })
         } else {
             this.input.addEventListener('input', e => {
                 clearTimeout(this.inputTimeout)
@@ -115,24 +146,24 @@ export class Assertion extends Gen.GenericNode {
             if (this.input.value == "") this.detach() 
         })
         this.input.focus()
-        this.dragStop = this.dragStopDefault
     }
+}
 
-    dragStopDefault() {
-        for (var v of this.map.contains(this)) {
-            if (v.isClusterNode) { v.addNode(this); return}
+export class ImmutableAssertion extends Assertion {
+    constructor(parent,x,y,config) {
+        super(parent,x,y,config)
+        if (!config) config = {}
+        if (config.value) {
+            this.input.value = config.value
+            this.input.cols = Math.min(15,Math.max(5, config.value.length))
         }
-        for (var v of this.map.contains(this)) {
-            if (v.isAssertion) { this.map.createCluster(v).addNode(this); return}
-        }
-    }
-
-    toJSON() {
-        let obj = super.toJSON()
-        obj.role = "assertion"
-        obj.config.value = this.input.value
-        obj.config.immutable = this.input.disabled
-        return obj
+        this.addEventListener('keydown', e => {
+            if (e.key == "Backspace") this.detach()
+            e.preventDefault() 
+        })
+        this.appendChild(this.input);
+        this.input.style.height = this.input.scrollHeight + 'px'
+        this.input.focus()
     }
 }
 
@@ -145,25 +176,29 @@ export class Cluster extends Gen.GenericNode {
         this.isClusterNode = true
         this.valenceContent = null
 
-        this.observer = new MutationObserver(t => {
+        this.emptyObserver = new MutationObserver(t => {
             if (Object.keys(this.nodes).length == 0) this.detach() 
         })
-        this.observer.observe(this, {subtree:true, childList: true})
+        this.emptyObserver.observe(this, {subtree:true, childList: true})
         this.clusterContents = document.createElement("div");
         this.style.zIndex = 1
         $(this).on("dragstart", _ => this.style.zIndex = 50)
-        $(this).on("dragstop", _ => this.style.zIndex = 1)
+        $(this).on("dragstop", _ => { 
+            this.style.zIndex = 1
+            this.repel()
+        })
         this.appendChild(this.clusterContents);
     }
-    
+
     addNode(node) {
         this.clusterContents.appendChild(node)
-        node.style.position = "relative"
-        node.top = 0
+        this.map.focalNode = this
+        //relativize position and drag behavior
+        node.style.position = "relative" 
+        node.top = 0 
         node.left = 0
         node.initDrag(0)
-        this.nodes[node.uuid] = node
-
+        this.nodes[node.uuid] = node //add to node list
         node.cluster = this
         node.dragStart = _ => {
             node.dragOffset = {x : node.offsetLeft, y : node.offsetTop}
@@ -176,7 +211,6 @@ export class Cluster extends Gen.GenericNode {
                     if (v.isClusterNode) {
                         this.removeNode(node)
                         v.addNode(node)
-                        this.map.focalNode = v
                         return
                     }
                 }
@@ -185,7 +219,7 @@ export class Cluster extends Gen.GenericNode {
                         this.removeNode(node)
                         let cluster = node.map.createCluster(v)
                         cluster.addNode(node)
-                        this.map.focalNode = cluster
+                        
                         return
                     }
                 }
@@ -242,6 +276,9 @@ export class Cluster extends Gen.GenericNode {
         for (var key in this.incoming) this.incoming[key].end = target
     }
 
+    //only reply unclustered nodes
+    repel() { super.repel(val => { return !val.cluster }) }
+
     toJSON () {
         let obj = super.toJSON()
         obj.role = "cluster"
@@ -260,9 +297,24 @@ export class ScaffoldedDebateMap extends DebateMap {
             let data = e.dataTransfer.getData("application/disputatio")
             let rect = this.surface.getBoundingClientRect()
             let zoom = this.transform.scale
-            this.createAssertion((e.clientX - rect.left)/zoom,(e.clientY - rect.top)/zoom,
-                {value: data, immutable: true})
+            this.createAssertion((e.clientX - rect.left)/zoom, (e.clientY - rect.top)/zoom, {value: data})
         })
+    }
+
+    createAssertion(x,y,config) { 
+        let node = new ImmutableAssertion(this,x,y,config); 
+        this.focalNode = node
+        this.changed()
+        return node
+    }
+
+    fromJSON(json) {
+        let obj = JSON.parse(json)
+        for (var key in obj.nodes) if (obj.nodes[key].role == "assertion") {
+            let savednode = obj.nodes[key]
+            new ImmutableAssertion(this, savednode.left, savednode.top, savednode.config)
+        }
+        super.fromJSON(json)
     }
 }
 
@@ -277,5 +329,102 @@ export class FreeformDebateMap extends DebateMap {
             this.createAssertion((e.clientX - rect.left - 20)/zoom, (e.clientY - rect.top - 20)/zoom) 
         } 
         else { super.handleClick(e) }
+    }
+
+    createAssertion(x,y,config) { 
+        let node = new MutableAssertion(this,x,y,config); 
+        this.focalNode = node
+        this.changed()
+        return node
+    }
+
+    fromJSON(json) {
+        let obj = JSON.parse(json)
+        for (var key in obj.nodes) if (obj.nodes[key].role == "assertion") {
+            let savednode = obj.nodes[key]
+            new MutableAssertion(this, savednode.left, savednode.top, savednode.config)
+        }
+        super.fromJSON(json)
+    }
+}
+
+export class KeyboardFreeformDebateMap extends DebateMap {
+
+    constructor() { super() }
+
+    createAssertion(x,y,config) { 
+        let node = new MutableAssertion(this,x,y,config); 
+        this.addBinds(node)
+        this.focalNode = node
+        this.changed()
+        return node
+    }
+
+    nodeAbove(node) {
+        let pos
+        let rect = node.getBoundingClientRect()
+        if (node.cluster)  pos = node.cluster  // if the node is clustered, we use that for positioning
+        else pos = node
+        let support = this.createAssertion(pos.left - 10, pos.top - 200, {})
+        this.focalNode = this.createCluster(support)
+        this.createEdge(this.focalNode, node)
+        this.focalNode.valence = "pro"
+        this.focalNode.repel()
+        support.input.focus()
+        return this.focalNode
+    }
+
+    nodeBeside(node) { 
+        let pos
+        if (node.cluster)  pos = node.cluster  // if the node is clustered, we use that for positioning
+        else pos = node
+        let rect = node.getBoundingClientRect()
+        let statement = this.createAssertion((pos.left + rect.width + 50), pos.top , {})
+        statement.repel()
+    }
+
+    nodeWithin(cluster) {
+        let statement = this.createAssertion(0, 0, {})
+        cluster.addNode(statement)
+        cluster.repel() 
+        statement.input.focus()
+        statement.repel()
+    }
+
+    addBinds(node) {
+        node.addEventListener('keydown', e => {
+            if (e.key == "Tab") {
+                if (node.cluster) this.nodeWithin(node.cluster)
+                else this.nodeBeside(node)
+                e.preventDefault() 
+            }
+            if (e.key == "Enter" || (e.key == "s" && e.altKey)) {
+                this.nodeAbove(node)
+                e.preventDefault() 
+            }
+            if (e.key == "o" && e.altKey) {
+                this.nodeAbove(node).valence = "con"
+                e.preventDefault() 
+            }
+            if (e.key == "t" && e.altKey) {
+                node.implicit = !node.implicit
+                this.changed()
+                e.preventDefault() 
+            }
+            if (e.key == "d" && e.ctrlKey) {
+                this.nodeBeside(node)
+                e.preventDefault() 
+            }
+        })
+    }
+
+    fromJSON(json) {
+        let obj = JSON.parse(json)
+        for (var key in obj.nodes) if (obj.nodes[key].role == "assertion") {
+            let savednode = obj.nodes[key]
+            let node = new MutableAssertion(this, savednode.left, savednode.top, savednode.config)
+            this.addBinds(node)
+        }
+        super.fromJSON(json)
     }
 }
