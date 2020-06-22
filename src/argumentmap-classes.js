@@ -69,6 +69,8 @@ export class Assertion extends Gen.GenericNode {
     constructor(parent,x,y,config) {
         if (!config) config = {}
         super(parent,x,y,config)
+        if (config.implicit) this.implicit = true
+        else this.implicit = false
         this.style.zIndex = 5
         $(this).on("dragstart",_=> this.style.zIndex = 50)
         $(this).on("dragstop",_=> this.style.zIndex = 5)
@@ -81,6 +83,18 @@ export class Assertion extends Gen.GenericNode {
         this.input.style.border = 'none'
         this.input.mapNode = this
     }
+
+    set implicit (val) { 
+        if (val) {
+            this.style.borderStyle = "dashed"
+            this.implicitContent = true
+        } else {
+            this.style.borderStyle = "solid"
+            this.implicitContent = false
+        }
+    }
+
+    get implicit () { return this.implicitContent }
 
     dragStopDefault() {
         for (var v of this.map.contains(this)) {
@@ -103,6 +117,7 @@ export class Assertion extends Gen.GenericNode {
         let obj = super.toJSON()
         obj.role = "assertion"
         obj.config.value = this.input.value
+        obj.config.implicit = this.implicit
         return obj
     }
 
@@ -345,30 +360,59 @@ export class KeyboardFreeformDebateMap extends DebateMap {
         return node
     }
 
+    nodeAbove(node) {
+        let pos
+        let rect = node.getBoundingClientRect()
+        if (node.cluster)  pos = node.cluster  // if the node is clustered, we use that for positioning
+        else pos = node
+        let support = this.createAssertion(pos.left - 10, pos.top - 200, {})
+        this.focalNode = this.createCluster(support)
+        this.createEdge(this.focalNode, node)
+        this.focalNode.valence = "pro"
+        this.focalNode.repel()
+        support.input.focus()
+        return this.focalNode
+    }
+
+    nodeBeside(node) { 
+        let pos
+        if (node.cluster)  pos = node.cluster  // if the node is clustered, we use that for positioning
+        else pos = node
+        let rect = node.getBoundingClientRect()
+        let statement = this.createAssertion((pos.left + rect.width + 50), pos.top , {})
+        statement.repel()
+    }
+
+    nodeWithin(cluster) {
+        let statement = this.createAssertion(0, 0, {})
+        cluster.addNode(statement)
+        cluster.repel() 
+        statement.input.focus()
+        statement.repel()
+    }
+
     addBinds(node) {
         node.addEventListener('keydown', e => {
-            let rect = node.getBoundingClientRect()
-            let pos
             if (e.key == "Tab") {
-                if (node.cluster) pos = node.cluster // if the node is clustered, we use that for positioning
-                else pos = node
-                let statement = this.createAssertion((pos.left + rect.width + 50), pos.top , {})
-                if (node.cluster) {
-                    node.cluster.addNode(statement)
-                    node.cluster.repel() 
-                    statement.input.focus()
-                } else { statement.repel() }
+                if (node.cluster) this.nodeWithin(node.cluster)
+                else this.nodeBeside(node)
                 e.preventDefault() 
             }
-            if (e.key == "Enter") {
-                if (node.cluster)  pos = node.cluster  // if the node is clustered, we use that for positioning
-                else pos = node
-                let support = this.createAssertion(pos.left - 10, pos.top - 200, {})
-                this.focalNode = this.createCluster(support)
-                this.createEdge(this.focalNode, node)
-                this.focalNode.valence = "pro"
-                this.focalNode.repel()
-                support.input.focus()
+            if (e.key == "Enter" || (e.key == "s" && e.altKey)) {
+                this.nodeAbove(node)
+                e.preventDefault() 
+            }
+            if (e.key == "o" && e.altKey) {
+                this.nodeAbove(node).valence = "con"
+                e.preventDefault() 
+            }
+            if (e.key == "t" && e.altKey) {
+                node.implicit = !node.implicit
+                this.changed()
+                e.preventDefault() 
+            }
+            if (e.key == "d" && e.ctrlKey) {
+                this.nodeBeside(node)
                 e.preventDefault() 
             }
         })
