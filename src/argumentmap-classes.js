@@ -32,8 +32,12 @@ class DebateMap extends Gen.GenericMap {
                 }
             } 
             this.focalNode.updateIncoming()
-        } else if (e.target.mapNode && (e.target.mapNode.parentNode == this.surface)) { //without shift, click updates focus
-            this.focalNode = e.target.mapNode
+        } else if (e.target.mapNode) {
+            if (e.target.mapNode.cluster && e.target.mapNode.cluster.parentNode == this.surface) {//without shift, click updates focus
+                this.focalNode = e.target.mapNode.cluster
+            } else if (e.target.mapNode.parentNode == this.surface) { 
+                this.focalNode = e.target.mapNode
+            }
         }
     }
 
