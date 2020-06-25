@@ -397,26 +397,30 @@ export class KeyboardFreeformDebateMap extends DebateMap {
 
     addBinds(node) {
         node.addEventListener('keydown', e => {
-            if (e.key == "Tab") {
-                if (node.cluster) this.nodeWithin(node.cluster)
-                else this.nodeBeside(node)
-                e.preventDefault() 
-            }
-            if (e.key == "Enter" || (e.key == "s" && e.altKey)) {
-                this.nodeAbove(node)
-                e.preventDefault() 
-            }
-            if (e.key == "o" && e.altKey) {
-                this.nodeAbove(node).valence = "con"
-                e.preventDefault() 
-            }
-            if (e.key == "t" && e.altKey) {
-                node.implicit = !node.implicit
-                this.changed()
-                e.preventDefault() 
-            }
-            if (e.key == "d" && e.ctrlKey) {
-                this.nodeBeside(node)
+            if (node.input.value != "") {
+                if (e.key == "Tab") {
+                    if (node.cluster) this.nodeWithin(node.cluster)
+                    else this.nodeBeside(node)
+                    e.preventDefault() 
+                }
+                if (e.key == "Enter" || (e.key == "s" && e.altKey)) {
+                    this.nodeAbove(node)
+                    e.preventDefault() 
+                }
+                if (e.key == "o" && e.altKey) {
+                    this.nodeAbove(node).valence = "con"
+                    e.preventDefault() 
+                }
+                if (e.key == "t" && e.altKey) {
+                    node.implicit = !node.implicit
+                    this.changed()
+                    e.preventDefault() 
+                }
+                if (e.key == "d" && e.ctrlKey) {
+                    this.nodeBeside(node)
+                    e.preventDefault() 
+                }
+            } else if (e.key == "Tab" || e.key == "Enter") { 
                 e.preventDefault() 
             }
         })
