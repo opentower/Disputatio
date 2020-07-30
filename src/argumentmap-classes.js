@@ -135,15 +135,14 @@ export class MutableAssertion extends Assertion {
         if (config.value) {
             this.input.value = config.value
             this.input.cols = Math.min(15,Math.max(5,config.value.length))
-        } else {
-            this.input.addEventListener('input', e => {
-                clearTimeout(this.inputTimeout)
-                this.input.style.height = 'auto'
-                this.input.cols = Math.min(15,Math.max(5,this.input.value.length))
-                this.input.style.height = this.input.scrollHeight + 'px'
-                this.inputTimeout = setTimeout(_ => this.map.changed(),250) 
-            })
-        }
+        } 
+        this.input.addEventListener('input', e => {
+            clearTimeout(this.inputTimeout)
+            this.input.style.height = 'auto'
+            this.input.cols = Math.min(15,Math.max(5,this.input.value.length))
+            this.input.style.height = this.input.scrollHeight + 'px'
+            this.inputTimeout = setTimeout(_ => this.map.changed(),250) 
+        })
         this.appendChild(this.input);
         this.input.style.height = this.input.scrollHeight + 'px'
         this.input.addEventListener('focusout', _ => { 
