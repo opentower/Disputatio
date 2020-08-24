@@ -22,7 +22,6 @@ function overlap (r1,r2) {
 export class GenericMap extends HTMLElement {
     constructor() {
         super();
-        this.surface = document.createElement("div")
         this.focalNodeContent = null //initialize focal node content
         this.nodes = {}              //initialize table of nodes
         this.edges = {}              //initialize table of edges
@@ -30,32 +29,40 @@ export class GenericMap extends HTMLElement {
         this.future = []
         this.present = JSON.stringify(this)
         this.historyLock = false
-        this.svg = document.createElementNS("http://www.w3.org/2000/svg", 'svg')
-        this.surface.style.width = "10000px" //setting this too narrow creates visual glitches, 
-                                             //e.g. forcing assertions into a vertical stack
-        this.surface.style.height = "1px"
-        this.svg.style.width = "100%"
-        this.svg.style.height = "100%"
-        this.svg.style.position = "absolute"
-        this.svg.style.pointerEvents = "none"
-        this.svg.style.overflow = "visible"
-        this.svg.style.zIndex = "2"
-        this.appendChild(this.surface)
-        this.surface.appendChild(this.svg)
-        this.zoom = panzoom(this.surface, {
-            zoomSpeed: 0.1,
-            beforeWheel: e => { return !e.altKey },
-            beforeMouseDown: e => { return !e.altKey },
-        })
-        this.style.zIndex = "2"
-        this.surface.style.zIndex = "0"
-        this.style.border = "1px solid"
-        this.style.display = 'inline-block'
-        this.style.position = 'relative'
-        this.style.overflow = 'hidden'
+
         this.addEventListener("changed", _ => this.updateHistory())
         this.addEventListener('dragover', e => e.preventDefault())
         $(this).on('drag', _ => this.redrawEdges() ) 
+    }
+
+    connectedCallback() {
+        // per WHATWG spec 4.13.2, styling and children should be deferred until attached to the DOM
+        if (!this.surface) {
+            this.svg = document.createElementNS("http://www.w3.org/2000/svg", 'svg')
+            this.svg.style.width = "100%"
+            this.svg.style.height = "100%"
+            this.svg.style.position = "absolute"
+            this.svg.style.pointerEvents = "none"
+            this.svg.style.overflow = "visible"
+            this.svg.style.zIndex = "2"
+
+            this.surface = document.createElement("div")
+            this.surface.style.width = "10000px" //setting this too narrow creates visual glitches, 
+            this.surface.style.height = "1px"
+            this.appendChild(this.surface)
+            this.surface.appendChild(this.svg)
+            this.zoom = panzoom(this.surface, {
+                zoomSpeed: 0.1,
+                beforeWheel: e => { return !e.altKey },
+                beforeMouseDown: e => { return !e.altKey },
+            })
+            this.style.zIndex = "2"
+            this.surface.style.zIndex = "0"
+            this.style.border = "1px solid"
+            this.style.display = 'inline-block'
+            this.style.position = 'relative'
+            this.style.overflow = 'hidden'
+        }
     }
 
     changed() { this.dispatchEvent(changed) }
@@ -174,23 +181,33 @@ export class GenericMap extends HTMLElement {
 }
 
 export class GenericNode extends HTMLElement {
-    constructor(parent,x,y, config) {
+    constructor(config) {
         super();
-        this.map = parent
-        if (!config) config = {}
-        if (config.uuid) this.uuid = config.uuid
+        if (config) this.config = config 
+        else this.config = {}
+        if (this.config.uuid) this.uuid = this.config.uuid
         else this.uuid = Math.random().toString(36).substring(2) //generate unique identifier
-        this.map.nodes[this.uuid] = this //register in the map
         this.incoming = {} //initialize table of incoming edges
         this.outgoing = {} //initialize table of outgoing edges
         this.resizeObserver = new ResizeObserver(_ => this.repel())
         this.resizeObserver.observe(this)
+        this.initDrag(1)
+        $(this).on("dragstop", _ => { this.map.changed() })
+    }
+
+    initAttach (parent,x,y) {
+        this.map = parent
+        this.map.nodes[this.uuid] = this //register in the map
+        this.left = x
+        this.top = y
+        this.attach(parent)
+    }
+    
+    connectedCallback() {
         this.style.position = 'absolute'
         this.style.display= 'inline-block'
         this.style.border = '1px solid gray'
         this.style.padding = '10px'
-        this.top = y
-        this.left = x
 
         let bg = document.createElement("div");
         bg.style.display = 'inline-block'
@@ -201,11 +218,7 @@ export class GenericNode extends HTMLElement {
         bg.style.height = '100%'
         bg.style.width = '100%'
         bg.mapNode = this
-
         this.appendChild(bg);
-        this.attach(parent)
-        this.initDrag(1)
-        $(this).on("dragstop", _ => { this.map.changed() })
     }
 
     initDrag (translationFactor) { 
