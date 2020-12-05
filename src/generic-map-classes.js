@@ -29,27 +29,33 @@ export class GenericMap extends HTMLElement {
         this.future = []
         this.present = JSON.stringify(this)
         this.historyLock = false
+        this.svg = document.createElementNS("http://www.w3.org/2000/svg", 'svg')
+        this.frame = document.createElement("div")
+        this.surface = document.createElement("div")
+        this.initialized = false
 
         this.addEventListener("changed", _ => this.updateHistory())
         this.addEventListener('dragover', e => e.preventDefault())
-        $(this).on('drag', _ => this.redrawEdges() ) 
+        $(this.frame).on('drag', _ => this.redrawEdges() ) 
+        this.shadow = this.attachShadow({mode: 'open'})
     }
 
     connectedCallback() {
-        // per WHATWG spec 4.13.2, styling and children should be deferred until attached to the DOM
-        if (!this.surface) {
-            this.svg = document.createElementNS("http://www.w3.org/2000/svg", 'svg')
+        // per WHATWG spec 4.13.2, styling and attaching children should be deferred until attached to the DOM
+        if (!this.initialized) { //initializing on first attach
             this.svg.style.width = "100%"
             this.svg.style.height = "100%"
             this.svg.style.position = "absolute"
             this.svg.style.pointerEvents = "none"
             this.svg.style.overflow = "visible"
             this.svg.style.zIndex = "2"
-
-            this.surface = document.createElement("div")
+            this.frame.style.width = "100%"
+            this.frame.style.height = "100%"
+            this.frame.map = this
             this.surface.style.width = "10000px" //setting this too narrow creates visual glitches, 
             this.surface.style.height = "1px"
-            this.appendChild(this.surface)
+            this.shadow.appendChild(this.frame)
+            this.frame.appendChild(this.surface)
             this.surface.appendChild(this.svg)
             this.zoom = panzoom(this.surface, {
                 zoomSpeed: 0.1,
@@ -62,6 +68,7 @@ export class GenericMap extends HTMLElement {
             this.style.display = 'inline-block'
             this.style.position = 'relative'
             this.style.overflow = 'hidden'
+            this.initialized = true
         }
     }
 
@@ -189,6 +196,9 @@ export class GenericNode extends HTMLElement {
         else this.uuid = Math.random().toString(36).substring(2) //generate unique identifier
         this.incoming = {} //initialize table of incoming edges
         this.outgoing = {} //initialize table of outgoing edges
+        this.bg = document.createElement("div"); //initialize background div
+        this.initialized = false
+        this.bg.mapNode = this
         this.resizeObserver = new ResizeObserver(_ => this.repel())
         this.resizeObserver.observe(this)
         this.initDrag(1)
@@ -204,21 +214,21 @@ export class GenericNode extends HTMLElement {
     }
     
     connectedCallback() {
-        this.style.position = 'absolute'
-        this.style.display= 'inline-block'
-        this.style.border = '1px solid gray'
-        this.style.padding = '10px'
-
-        let bg = document.createElement("div");
-        bg.style.display = 'inline-block'
-        bg.style.position = 'absolute'
-        bg.style.background = 'white'
-        bg.style.top = 0
-        bg.style.left = 0
-        bg.style.height = '100%'
-        bg.style.width = '100%'
-        bg.mapNode = this
-        this.appendChild(bg);
+        if (!this.initialized) {
+            this.style.position = 'absolute'
+            this.style.display= 'inline-block'
+            this.style.border = '1px solid gray'
+            this.style.padding = '10px'
+            this.bg.style.display = 'inline-block'
+            this.bg.style.position = 'absolute'
+            this.bg.style.background = 'white'
+            this.bg.style.top = 0
+            this.bg.style.left = 0
+            this.bg.style.height = '100%'
+            this.bg.style.width = '100%'
+            this.appendChild(this.bg)
+            this.initialized = true
+        }
     }
 
     initDrag (translationFactor) { 

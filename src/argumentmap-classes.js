@@ -5,38 +5,39 @@ class DebateMap extends Gen.GenericMap {
 
     constructor() { 
         super() 
-        this.addEventListener('click',this.handleClick)
+        this.frame.addEventListener('click',this.handleClick)
     }
 
     handleClick(e) {
-        if (this.focalNode && e.target.mapNode && e.shiftKey) { //holding shift makes the click manipulate arrows.
+        let theMap = this.map
+        if (theMap.focalNode && e.target.mapNode && e.shiftKey) { //holding shift makes the click manipulate arrows.
             let targetNode = e.target.mapNode
-            if (targetNode.uuid in this.focalNode.outgoing) { 
-                if (this.focalNode.valence == "pro") { //turn support into denial
-                    this.focalNode.valence = "con"
+            if (targetNode.uuid in theMap.focalNode.outgoing) { 
+                if (theMap.focalNode.valence == "pro") { //turn support into denial
+                    theMap.focalNode.valence = "con"
                 } else { 
-                    this.removeEdge(this.focalNode,targetNode) //or remove denial
-                    this.focalNode.clearIncoming() //also remove incoming edges
-                    this.focalNode.valence = null
+                    theMap.removeEdge(theMap.focalNode,targetNode) //or remove denial
+                    theMap.focalNode.clearIncoming() //also remove incoming edges
+                    theMap.focalNode.valence = null
                 }
-            } else if (targetNode != this.focalNode) { //otherwise draw an arrow if the target is eligible
-                if (this.focalNode.isAssertion) {
-                    this.focalNode = this.createCluster(this.focalNode)
-                    this.createEdge(this.focalNode, targetNode)
-                    this.focalNode.valence = "pro"
-                } else if (this.focalNode.isClusterNode && targetNode.cluster != this.focalNode ) {
-                    this.focalNode.clearOutgoing() //remove old outgoing
-                    this.focalNode.clearIncoming() //also remove incoming edges
-                    this.createEdge(this.focalNode, targetNode)
-                    this.focalNode.valence = "pro"
+            } else if (targetNode != theMap.focalNode) { //otherwise draw an arrow if the target is eligible
+                if (theMap.focalNode.isAssertion) {
+                    theMap.focalNode = theMap.createCluster(theMap.focalNode)
+                    theMap.createEdge(theMap.focalNode, targetNode)
+                    theMap.focalNode.valence = "pro"
+                } else if (theMap.focalNode.isClusterNode && targetNode.cluster != theMap.focalNode ) {
+                    theMap.focalNode.clearOutgoing() //remove old outgoing
+                    theMap.focalNode.clearIncoming() //also remove incoming edges
+                    theMap.createEdge(theMap.focalNode, targetNode)
+                    theMap.focalNode.valence = "pro"
                 }
             } 
-            this.focalNode.updateIncoming()
+            theMap.focalNode.updateIncoming()
         } else if (e.target.mapNode) {
-            if (e.target.mapNode.cluster && e.target.mapNode.cluster.parentNode == this.surface) {//without shift, click updates focus
-                this.focalNode = e.target.mapNode.cluster
-            } else if (e.target.mapNode.parentNode == this.surface) { 
-                this.focalNode = e.target.mapNode
+            if (e.target.mapNode.cluster && e.target.mapNode.cluster.parentNode == theMap.surface) {//without shift, click updates focus
+                theMap.focalNode = e.target.mapNode.cluster
+            } else if (e.target.mapNode.parentNode == theMap.surface) { 
+                theMap.focalNode = e.target.mapNode
             }
         }
     }
@@ -282,7 +283,7 @@ export class Cluster extends Gen.GenericNode {
 
     updateIncoming() {
         var target
-        if (this.uniqueOutgoing) { target = document.getElementById(this.uniqueOutgoing.uuid).querySelector("text") }
+        if (this.uniqueOutgoing) { target = this.map.shadow.getElementById(this.uniqueOutgoing.uuid).querySelector("text") }
         else { target = this }
         for (var key in this.incoming) this.incoming[key].end = target
     }
@@ -337,9 +338,9 @@ export class FreeformDebateMap extends DebateMap {
 
     handleClick (e) {
         if (e.target == this) { 
-            let rect = this.surface.getBoundingClientRect()
-            let zoom = this.transform.scale
-            this.createAssertion((e.clientX - rect.left - 20)/zoom, (e.clientY - rect.top - 20)/zoom) 
+            let rect = this.map.surface.getBoundingClientRect()
+            let zoom = this.map.transform.scale
+            this.map.createAssertion((e.clientX - rect.left - 20)/zoom, (e.clientY - rect.top - 20)/zoom) 
         } 
         else { super.handleClick(e) }
     }
@@ -380,7 +381,7 @@ export class KeyboardFreeformDebateMap extends DebateMap {
     nodeAbove(node) {
         let pos
         let rect = node.getBoundingClientRect()
-        if (node.cluster)  pos = node.cluster  // if the node is clustered, we use that for positioning
+        if (node.cluster) pos = node.cluster  // if the node is clustered, we use that for positioning
         else pos = node
         let support = this.createAssertion(pos.left - 10, pos.top - 200, {})
         this.focalNode = this.createCluster(support)

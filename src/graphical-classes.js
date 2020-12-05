@@ -19,7 +19,6 @@ class RelativeLine {
         this.map.svg.appendChild(this.midpoint)
         this.map.svg.appendChild(this.head)
         this.midpoint.appendChild(this.label)
-        console.log(this.target)
         this.updatePosition()
     }
 
