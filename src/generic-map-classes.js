@@ -1,7 +1,8 @@
 var $ = require("jquery")
 var panzoom = require("panzoom")
 require("jquery-ui/ui/widgets/draggable")
-var RelativeLine = require("./graphical-classes")
+var RelativeLine = require("./graphical-classes.js")
+var genericMapCss = require("./generic-map.css").toString();
 
 // This is an event to track changes, used for example is pushing to the undo
 // stack.

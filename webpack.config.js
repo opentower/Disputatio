@@ -2,5 +2,12 @@ module.exports = {
   output: {
     library: "disputatio",
   },
-  module: { rules: [] }
+  module: { 
+      rules: [
+          {
+              test: /\.css$/i,
+              use: ["css-loader"]
+          }
+      ] 
+  }
 }
