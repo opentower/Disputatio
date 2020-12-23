@@ -129,6 +129,7 @@ export class GenericMap extends HTMLElement {
         if (this.focalNode) { this.focalNodeContents.classList.remove('focalNode') }
         this.focalNodeContents = n
         if (this.focalNode) { this.focalNodeContents.classList.add('focalNode') }
+        this.redrawEdges()
     }
 
     get focalNode() { return this.focalNodeContents }

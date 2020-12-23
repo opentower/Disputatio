@@ -1,3 +1,5 @@
+var $ = require("jquery")
+
 class RelativeLine {
     constructor(s,t,map) {
         this.map = map
@@ -26,10 +28,11 @@ class RelativeLine {
         let svgrect = this.map.svg.getBoundingClientRect()
         let srect = this.source.getBoundingClientRect()
         let trect = this.target.getBoundingClientRect()
+        let sborder = $(this.source).css('border-bottom-width')
         let zoom
         if (this.map.transform) { zoom = this.map.transform.scale } else { zoom = 1 }
         let origin = { x: (srect.x - svgrect.x + srect.width/2)/zoom
-                     , y: (srect.y - svgrect.y + srect.height)/zoom }
+                     , y: (srect.y - svgrect.y + srect.height - parseInt(sborder,10))/zoom }
         let destination = { x: (trect.x - svgrect.x + trect.width/2)/zoom
                           , y: (trect.y - svgrect.y - 10)/zoom }
         this.path.setAttribute("d", "M" + origin.x + "," + origin.y 
