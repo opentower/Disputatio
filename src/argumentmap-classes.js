@@ -87,11 +87,8 @@ export class Assertion extends Gen.GenericNode {
 
     connectedCallback() {
         super.connectedCallback()
+        this.classList.add("assertionNode")
         this.appendChild(this.input)
-        this.style.zIndex = 5
-        this.input.style.position = 'relative'
-        this.input.style.resize = 'none'
-        this.input.style.border = 'none'
     }
 
     initAttach(parent,x,y) {
@@ -111,10 +108,10 @@ export class Assertion extends Gen.GenericNode {
 
     set implicit (val) { 
         if (val) {
-            this.style.borderStyle = "dashed"
+            this.classList.add("implicit")
             this.implicitContent = true
         } else {
-            this.style.borderStyle = "solid"
+            this.classList.remove("implicit")
             this.implicitContent = false
         }
     }
@@ -189,6 +186,7 @@ export class Cluster extends Gen.GenericNode {
         })
         this.emptyObserver.observe(this, {subtree:true, childList: true})
         this.clusterContents = document.createElement("div");
+        this.classList.add("clusterNode")
         $(this).on("dragstart", _ => this.style.zIndex = 50)
         $(this).on("dragstop", _ => { 
             this.style.zIndex = 1
@@ -198,7 +196,6 @@ export class Cluster extends Gen.GenericNode {
 
     connectedCallback() {
         super.connectedCallback()
-        this.style.zIndex = 1
         this.appendChild(this.clusterContents);
     }
 
@@ -270,13 +267,14 @@ export class Cluster extends Gen.GenericNode {
     set valence(s) { 
         this.valenceContent = s 
         if (s == "pro") {
-            this.style.borderColor = "green"
+            this.classList.add("proValence")
             for (var key in this.outgoing) this.outgoing[key].color = "green"
         } else if (s == "con") {
-            this.style.borderColor = "red"
+            this.classList.add("conValence")
             for (var key in this.outgoing) this.outgoing[key].color = "red"
         } else {
-            this.style.borderColor = "gray"
+            this.classList.remove("conValence")
+            this.classList.remove("proValence")
         }
         this.map.changed()
     }

@@ -1,0 +1,57 @@
+.svg {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 2;
+}
+
+.frame {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.surface {
+    width: 10000px; /* setting this too narrow creates visual glitches, */ 
+    height: 1px;
+    z-index: 0;
+}
+
+.genericNode {
+    display: inline-block;
+    border-width: 1px;
+    border-style: solid;
+    border-color: gray;
+    padding: 10px;
+}
+
+.genericNode > div:first-child {
+    display: inline-block;
+    position: absolute;
+    background: white;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+}
+
+.assertionNode > textarea {
+    position: relative;
+    resize: none;
+    border: none;
+}
+
+.focalNode {
+    border-width: 2px;
+    border-style:solid;
+}
+
+.proValence {
+    border-color: green;
+}
+
+.conValence {
+    border-color: red;
+}

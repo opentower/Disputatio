@@ -2,7 +2,7 @@ var $ = require("jquery")
 var panzoom = require("panzoom")
 require("jquery-ui/ui/widgets/draggable")
 var RelativeLine = require("./graphical-classes.js")
-var genericMapCss = require("./generic-map.css").toString();
+var genericMapCss = require("./generic-map.css").default.toString()
 
 // This is an event to track changes, used for example is pushing to the undo
 // stack.
@@ -31,8 +31,12 @@ export class GenericMap extends HTMLElement {
         this.present = JSON.stringify(this)
         this.historyLock = false
         this.svg = document.createElementNS("http://www.w3.org/2000/svg", 'svg')
+        this.svg.classList.add("svg")
         this.frame = document.createElement("div")
+        this.frame.classList.add("frame")
         this.surface = document.createElement("div")
+        this.surface.classList.add("surface")
+        this.stylesheet = document.createElement("style")
         this.initialized = false
 
         this.addEventListener("changed", _ => this.updateHistory())
@@ -44,17 +48,9 @@ export class GenericMap extends HTMLElement {
     connectedCallback() {
         // per WHATWG spec 4.13.2, styling and attaching children should be deferred until attached to the DOM
         if (!this.initialized) { //initializing on first attach
-            this.svg.style.width = "100%"
-            this.svg.style.height = "100%"
-            this.svg.style.position = "absolute"
-            this.svg.style.pointerEvents = "none"
-            this.svg.style.overflow = "visible"
-            this.svg.style.zIndex = "2"
-            this.frame.style.width = "100%"
-            this.frame.style.height = "100%"
             this.frame.map = this
-            this.surface.style.width = "10000px" //setting this too narrow creates visual glitches, 
-            this.surface.style.height = "1px"
+            this.stylesheet.innerHTML = genericMapCss
+            this.shadow.appendChild(this.stylesheet)
             this.shadow.appendChild(this.frame)
             this.frame.appendChild(this.surface)
             this.surface.appendChild(this.svg)
@@ -63,12 +59,9 @@ export class GenericMap extends HTMLElement {
                 beforeWheel: e => { return !e.altKey },
                 beforeMouseDown: e => { return !e.altKey },
             })
-            this.style.zIndex = "2"
-            this.surface.style.zIndex = "0"
             this.style.border = "1px solid"
             this.style.display = 'inline-block'
             this.style.position = 'relative'
-            this.style.overflow = 'hidden'
             this.initialized = true
         }
     }
@@ -133,15 +126,9 @@ export class GenericMap extends HTMLElement {
     }
 
     set focalNode(n) { 
-        if (this.focalNode) {
-            this.focalNodeContents.style.borderWidth = "1px"
-            this.focalNodeContents.classList.remove('focalNode')
-        }
+        if (this.focalNode) { this.focalNodeContents.classList.remove('focalNode') }
         this.focalNodeContents = n
-        if (this.focalNode) {
-            this.focalNodeContents.style.borderWidth = "2px"
-            this.focalNodeContents.classList.add('focalNode')
-        }
+        if (this.focalNode) { this.focalNodeContents.classList.add('focalNode') }
     }
 
     get focalNode() { return this.focalNodeContents }
@@ -206,30 +193,21 @@ export class GenericNode extends HTMLElement {
         $(this).on("dragstop", _ => { this.map.changed() })
     }
 
+    connectedCallback() {
+        if (!this.initialized) {
+            this.classList.add("genericNode")
+            this.style.position = 'absolute' //overridden by panzoom and switched around a lot, hence set here rather than in the css.
+            this.appendChild(this.bg)
+            this.initialized = true
+        }
+    }
+
     initAttach (parent,x,y) {
         this.map = parent
         this.map.nodes[this.uuid] = this //register in the map
         this.left = x
         this.top = y
         this.attach(parent)
-    }
-    
-    connectedCallback() {
-        if (!this.initialized) {
-            this.style.position = 'absolute'
-            this.style.display= 'inline-block'
-            this.style.border = '1px solid gray'
-            this.style.padding = '10px'
-            this.bg.style.display = 'inline-block'
-            this.bg.style.position = 'absolute'
-            this.bg.style.background = 'white'
-            this.bg.style.top = 0
-            this.bg.style.left = 0
-            this.bg.style.height = '100%'
-            this.bg.style.width = '100%'
-            this.appendChild(this.bg)
-            this.initialized = true
-        }
     }
 
     initDrag (translationFactor) { 
