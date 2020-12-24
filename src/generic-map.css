@@ -21,20 +21,25 @@
 
 .genericNode {
     display: inline-block;
-    border-width: 1px;
+    border-width: 2px;
     border-style: solid;
+    border-radius:12px;
     border-color: gray;
-    padding: 10px;
 }
 
 .genericNode > div:first-child {
     display: inline-block;
     position: absolute;
     background: white;
+    border-radius:12px;
     top: 0;
     left: 0;
     height: 100%;
     width: 100%;
+}
+
+.assertionNode {
+    padding: 10px;
 }
 
 .assertionNode > textarea {
@@ -47,6 +52,17 @@
     border-width: 5px;
     border-style:solid;
 }
+
+.clusterNode > div > .assertionNode {
+    margin-left:10px;
+    margin-top:10px;
+    margin-bottom:10px;
+}
+
+.clusterNode > div > .assertionNode:last-child {
+    margin-right:10px;
+}
+
 
 .proValence {
     border-color: green;
