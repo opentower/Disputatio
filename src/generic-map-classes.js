@@ -220,16 +220,19 @@ export class GenericNode extends HTMLElement {
                 this.skip = true
             },
             drag: function(event, ui) {
-                var trans = this.map.transform
-                var changeLeft = ui.position.left - (ui.originalPosition.left + (trans.x * translationFactor)); // find change in left
-                var newLeft = ui.originalPosition.left + changeLeft / trans.scale; // adjust new left by our zoomScale
-                var changeTop = ui.position.top - (ui.originalPosition.top + (trans.y * translationFactor)); // find change in top
-                var newTop = ui.originalPosition.top + changeTop / trans.scale; // adjust new top by our zoomScale
-                ui.position.left = newLeft;
-                ui.position.top = newTop;
-                //skip first redraw to avoid odd position-flash associated with start event
-                if (!this.skip) { this.map.redrawEdges() } 
-                else (this.skip = false)
+                    var trans = this.map.transform
+                    console.log(trans)
+                    var changeLeft = ui.position.left - (ui.originalPosition.left + (trans.x * translationFactor)); // find change in left
+                    var newLeft = ui.originalPosition.left + changeLeft / trans.scale; // adjust new left by our zoomScale
+                    var changeTop = ui.position.top - (ui.originalPosition.top + (trans.y * translationFactor)); // find change in top
+                    var newTop = ui.originalPosition.top + changeTop / trans.scale; // adjust new top by our zoomScale
+                    ui.position.left = newLeft;
+                    ui.position.top = newTop;
+                window.requestAnimationFrame(_ => {
+                    //skip first redraw to avoid odd position-flash associated with start event
+                    if (!this.skip) { this.map.redrawEdges() } 
+                    else (this.skip = false)
+                })
             },
         });
     };
