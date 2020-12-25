@@ -41,7 +41,6 @@ export class GenericMap extends HTMLElement {
 
         this.addEventListener("changed", _ => this.updateHistory())
         this.addEventListener('dragover', e => e.preventDefault())
-        $(this.frame).on('drag', _ => this.redrawEdges() ) 
         this.shadow = this.attachShadow({mode: 'open'})
     }
 
@@ -218,6 +217,7 @@ export class GenericNode extends HTMLElement {
             start: function(event, ui) {
                 ui.position.left = 0
                 ui.position.top = 0
+                this.skip = true
             },
             drag: function(event, ui) {
                 var trans = this.map.transform
@@ -227,7 +227,10 @@ export class GenericNode extends HTMLElement {
                 var newTop = ui.originalPosition.top + changeTop / trans.scale; // adjust new top by our zoomScale
                 ui.position.left = newLeft;
                 ui.position.top = newTop;
-            }
+                //skip first redraw to avoid odd position-flash associated with start event
+                if (!this.skip) { this.map.redrawEdges() } 
+                else (this.skip = false)
+            },
         });
     };
 
