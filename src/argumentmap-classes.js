@@ -179,7 +179,6 @@ export class Cluster extends Gen.GenericNode {
         super(config);
         this.nodes = {}
         this.isClusterNode = true
-        this.valenceContent = null
 
         this.emptyObserver = new MutationObserver(t => {
             if (Object.keys(this.nodes).length == 0) this.detach() 
@@ -228,7 +227,6 @@ export class Cluster extends Gen.GenericNode {
                         this.removeNode(node)
                         let cluster = node.map.createCluster(v)
                         cluster.addNode(node)
-                        
                         return
                     }
                 }
@@ -262,21 +260,11 @@ export class Cluster extends Gen.GenericNode {
         else { return null }
     }
 
-    get valence() { return this.valenceContent }
+    get valence() { return this.dataset.valence }
 
     set valence(s) {
-        //TODO: do this a data-attribute rather than with classes
-        this.valenceContent = s 
-        if (s == "pro") {
-            this.classList.add("proValence")
-            for (var key in this.outgoing) this.outgoing[key].valence = "pro"
-        } else if (s == "con") {
-            this.classList.add("conValence")
-            for (var key in this.outgoing) this.outgoing[key].valence = "con"
-        } else {
-            this.classList.remove("conValence")
-            this.classList.remove("proValence")
-        }
+        this.dataset.valence = s
+        for (var key in this.outgoing) this.outgoing[key].valence = s
         this.map.changed()
     }
 

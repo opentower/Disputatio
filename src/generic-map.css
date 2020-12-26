@@ -93,11 +93,10 @@
     margin-right:10px;
 }
 
-
-.proValence {
+.clusterNode[data-valence="pro"]{
     border-color: green;
 }
 
-.conValence {
-    border-color: red;
+.clusterNode[data-valence="con"]{
+    border-color: green;
 }
