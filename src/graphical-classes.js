@@ -31,7 +31,7 @@ class RelativeLine {
         let zoom
         if (this.map.transform) { zoom = this.map.transform.scale } else { zoom = 1 }
         let origin = { x: (srect.x - svgrect.x + srect.width/2)/zoom
-                     , y: (srect.y - svgrect.y + srect.height)/zoom}
+                     , y: (srect.y - svgrect.y + srect.height)/zoom - 1}
         let destination = { x: (trect.x - svgrect.x + trect.width/2)/zoom
                           , y: (trect.y - svgrect.y)/zoom - 10}
         this.path.setAttribute("d", "M" + origin.x + "," + origin.y 

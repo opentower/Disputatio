@@ -225,7 +225,6 @@ export class GenericNode extends HTMLElement {
             },
             drag: function(event, ui) {
                     var trans = this.map.transform
-                    console.log(trans)
                     var changeLeft = ui.position.left - (ui.originalPosition.left + (trans.x * translationFactor)); // find change in left
                     var newLeft = ui.originalPosition.left + changeLeft / trans.scale; // adjust new left by our zoomScale
                     var changeTop = ui.position.top - (ui.originalPosition.top + (trans.y * translationFactor)); // find change in top
