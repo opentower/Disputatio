@@ -97,6 +97,7 @@ export class GenericMap extends HTMLElement {
             this.present = past
             this.fromJSON(past)
         } else { console.log("no history") }
+        this.historyLock = false
     }
 
     redo() { 
@@ -108,6 +109,7 @@ export class GenericMap extends HTMLElement {
             this.present = future
             this.fromJSON(future)
         } else { console.log("no future") }
+        this.historyLock = false
     }
 
     clear() { 
