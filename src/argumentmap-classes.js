@@ -96,7 +96,7 @@ export class Assertion extends Gen.GenericNode {
         this.input.rows = 1
         if (this.config.value) {
             this.input.value = this.config.value
-            this.input.style.width = Math.min(200, Math.max(50, this.calcInputWidth() + 10)) + "px"
+            this.input.style.width = Math.min(200, Math.max(50, this.calcInputWidth() + 15)) + "px"
         } else {
             this.input.style.width = "50px"
         }
@@ -161,7 +161,7 @@ export class MutableAssertion extends Assertion {
         this.input.addEventListener('input', e => {
             clearTimeout(this.inputTimeout)
             this.input.style.height = 'auto'
-            this.input.style.width = Math.min(200, Math.max(50, this.calcInputWidth() + 10)) + "px"
+            this.input.style.width = Math.min(200, Math.max(50, this.calcInputWidth() + 15)) + "px"
             this.input.style.height = this.input.scrollHeight + 'px'
             this.inputTimeout = setTimeout(_ => this.map.changed(),250) 
         })

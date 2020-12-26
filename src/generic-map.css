@@ -107,6 +107,5 @@
 }
 
 .clusterNode[data-valence="con"]{
-    border-color: green;
+    border-color: red;
 }
-
