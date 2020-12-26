@@ -55,8 +55,12 @@ export class GenericMap extends HTMLElement {
             this.surface.appendChild(this.svg)
             this.zoom = panzoom(this.surface, {
                 zoomSpeed: 0.1,
-                beforeWheel: e => { return !e.altKey },
-                beforeMouseDown: e => { return !e.altKey },
+                beforeWheel: e => { 
+                    return !(e.altKey && e.target.classList.contains("frame"))
+                },
+                beforeMouseDown: e => { 
+                    return !(e.altKey && e.target.classList.contains("frame"))
+                },
             })
             this.style.border = "1px solid"
             this.style.display = 'inline-block'
