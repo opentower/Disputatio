@@ -93,13 +93,12 @@ export class Assertion extends Gen.GenericNode {
 
     initAttach(parent,x,y) {
         super.initAttach(parent,x,y)
+        this.input.rows = 1
         if (this.config.value) {
             this.input.value = this.config.value
             this.input.style.width = Math.min(200, Math.max(50, this.calcInputWidth() + 10)) + "px"
-            if (len < 15) this.input.rows = 1
         } else {
             this.input.style.width = "50px"
-            this.input.rows = 1
         }
         this.input.style.height = this.input.scrollHeight + 'px'
         this.input.focus()
