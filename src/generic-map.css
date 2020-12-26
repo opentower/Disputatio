@@ -47,6 +47,31 @@
     padding: 10px;
 }
 
+.argumentPath {
+    stroke: #000; 
+    fill: none; 
+    stroke-width: 5px;
+}
+
+.argumentPath[data-valence="pro"], 
+.argumentHead[data-valence="pro"]
+{ stroke: green; }
+
+.argumentPath[data-valence="con"], 
+.argumentHead[data-valence="con"]
+{ stroke: red; }
+
+.argumentHead {
+    stroke: #000; 
+    fill: none; 
+    stroke-width: 5px;
+}
+
+.argumentDeco {
+    width: 100px;
+    height: 100px;
+}
+
 .assertionNode > textarea {
     position: relative;
     resize: none;

@@ -264,14 +264,15 @@ export class Cluster extends Gen.GenericNode {
 
     get valence() { return this.valenceContent }
 
-    set valence(s) { 
+    set valence(s) {
+        //TODO: do this a data-attribute rather than with classes
         this.valenceContent = s 
         if (s == "pro") {
             this.classList.add("proValence")
-            for (var key in this.outgoing) this.outgoing[key].color = "green"
+            for (var key in this.outgoing) this.outgoing[key].valence = "pro"
         } else if (s == "con") {
             this.classList.add("conValence")
-            for (var key in this.outgoing) this.outgoing[key].color = "red"
+            for (var key in this.outgoing) this.outgoing[key].valence = "con"
         } else {
             this.classList.remove("conValence")
             this.classList.remove("proValence")

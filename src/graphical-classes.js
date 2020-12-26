@@ -9,14 +9,9 @@ class RelativeLine {
         this.path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
         this.head = document.createElementNS("http://www.w3.org/2000/svg", 'path');
         this.label = document.createElementNS("http://www.w3.org/1999/xhtml","span")
-        this.path.style.stroke = "#000"; 
-        this.path.style.fill = "none"; 
-        this.path.style.strokeWidth = "5px";
-        this.head.style.stroke = "#000"; 
-        this.head.style.fill = "none"; 
-        this.midpoint.setAttribute("width","100px")
-        this.midpoint.setAttribute("height","100px")
-        this.head.style.strokeWidth = "5px";
+        this.path.classList.add("argumentPath")
+        this.head.classList.add("argumentHead")
+        this.midpoint.classList.add("argumentDeco")
         this.map.svg.appendChild(this.path)
         this.map.svg.appendChild(this.midpoint)
         this.map.svg.appendChild(this.head)
@@ -51,12 +46,15 @@ class RelativeLine {
         this.map.svg.removeChild(this.head) 
     }
 
-    set color (c) { 
-        this.path.style.stroke = c; 
-        this.head.style.stroke = c; 
+    get valence () { 
+        return this.path.dataset.valence 
     }
 
-    get color () { return this.path.style.stroke }
+    set valence (c) { 
+        this.path.dataset.valence = c; 
+        this.head.dataset.valence = c; 
+    }
+
 }
 
 module.exports = RelativeLine;
