@@ -36,6 +36,11 @@
     left: 0;
     height: 100%;
     width: 100%;
+    cursor: grab;
+}
+
+.genericNode > div:first-child:active {
+    cursor: grabbing;
 }
 
 .assertionNode {
