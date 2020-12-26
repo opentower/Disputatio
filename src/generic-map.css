@@ -43,10 +43,6 @@
     cursor: grabbing;
 }
 
-.assertionNode {
-    padding: 10px;
-}
-
 .argumentPath {
     stroke: #000; 
     fill: none; 
@@ -72,25 +68,35 @@
     height: 100px;
 }
 
+.focalNode {
+    border-width: 5px;
+    border-style:solid;
+}
+
+.assertionNode {
+    padding: 10px;
+}
+
 .assertionNode > textarea {
     position: relative;
     resize: none;
     border: none;
 }
 
-.focalNode {
-    border-width: 5px;
-    border-style:solid;
+.assertionNode.focalNode {
+    padding: 7px;
+}
+
+.clusterNode {
+    padding:5px
+}
+
+.clusterNode.focalNode {
+    padding: 2px;
 }
 
 .clusterNode > div > .assertionNode {
-    margin-left:10px;
-    margin-top:10px;
-    margin-bottom:10px;
-}
-
-.clusterNode > div > .assertionNode:last-child {
-    margin-right:10px;
+    margin:5px
 }
 
 .clusterNode[data-valence="pro"]{
