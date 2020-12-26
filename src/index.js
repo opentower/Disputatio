@@ -4,6 +4,10 @@ var comparison = require('./comparison')
 
 export var subTest = comparison.subTest
 
+var fontstyle = document.createElement("style")
+fontstyle.innerHTML = "@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro&display=swap');"
+document.head.appendChild(fontstyle)
+
 customElements.define('disputatio-analysis', an_classes.Analysis);
 customElements.define('disputatio-premise', an_classes.PremiseSpan);
 customElements.define('disputatio-argumentmap', am_classes.FreeformDebateMap);

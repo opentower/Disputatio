@@ -81,6 +81,9 @@
     position: relative;
     resize: none;
     border: none;
+    font-family: 'Crimson Pro';
+    font-size:14pt;
+    outline:none;
 }
 
 .assertionNode.focalNode {
@@ -106,3 +109,4 @@
 .clusterNode[data-valence="con"]{
     border-color: green;
 }
+

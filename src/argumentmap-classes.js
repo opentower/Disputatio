@@ -95,11 +95,10 @@ export class Assertion extends Gen.GenericNode {
         super.initAttach(parent,x,y)
         if (this.config.value) {
             this.input.value = this.config.value
-            let len = this.config.value.length
-            this.input.cols = Math.min(15,Math.max(5,len))
+            this.input.style.width = Math.min(200, Math.max(50, this.calcInputWidth() + 10)) + "px"
             if (len < 15) this.input.rows = 1
         } else {
-            this.input.cols = 5
+            this.input.style.width = "50px"
             this.input.rows = 1
         }
         this.input.style.height = this.input.scrollHeight + 'px'
@@ -135,6 +134,17 @@ export class Assertion extends Gen.GenericNode {
         })
     }
 
+    calcInputWidth() { 
+        var canvas = document.createElement("canvas");
+        var context = canvas.getContext("2d");
+        var fontFam = $(this.input).css("font-family"); 
+        var fontSize = $(this.input).css("font-size"); 
+        var fontString = fontSize + ' ' + fontFam
+        context.font = fontString
+        var metrics = context.measureText(this.input.value);
+        return metrics.width;
+    }
+
     toJSON() {
         let obj = super.toJSON()
         obj.role = "assertion"
@@ -152,7 +162,7 @@ export class MutableAssertion extends Assertion {
         this.input.addEventListener('input', e => {
             clearTimeout(this.inputTimeout)
             this.input.style.height = 'auto'
-            this.input.cols = Math.min(15,Math.max(5,this.input.value.length))
+            this.input.style.width = Math.min(200, Math.max(50, this.calcInputWidth() + 10)) + "px"
             this.input.style.height = this.input.scrollHeight + 'px'
             this.inputTimeout = setTimeout(_ => this.map.changed(),250) 
         })
@@ -160,6 +170,7 @@ export class MutableAssertion extends Assertion {
             if (this.input.value == "") this.detach() 
         })
     }
+
 }
 
 export class ImmutableAssertion extends Assertion {
