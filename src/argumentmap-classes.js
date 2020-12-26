@@ -335,7 +335,7 @@ export class FreeformDebateMap extends DebateMap {
     constructor() { super() }
 
     handleClick (e) {
-        if (e.target == this) { 
+        if (e.target == this && !e.altKey) { 
             let rect = this.map.surface.getBoundingClientRect()
             let zoom = this.map.transform.scale
             this.map.createAssertion((e.clientX - rect.left - 20)/zoom, (e.clientY - rect.top - 20)/zoom) 
