@@ -403,8 +403,11 @@ export class KeyboardFreeformDebateMap extends DebateMap {
 
     nodeWithin(cluster) {
         let statement = this.createAssertion(0, 0, {})
+        //we need to set a value to make sure the support node isn't cleared during clustering
+        statement.input.value = " "
         cluster.addNode(statement)
         cluster.repel() 
+        statement.input.value = "" 
         statement.input.focus()
         statement.repel()
     }
