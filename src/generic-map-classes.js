@@ -63,7 +63,6 @@ export class GenericMap extends HTMLElement {
                 },
                 onTouch: e => { return false }
             })
-            this.zoom.pause()
             this.style.border = "1px solid"
             this.style.display = 'inline-block'
             this.style.position = 'relative'
@@ -209,6 +208,7 @@ export class GenericNode extends HTMLElement {
         $(this).on("touchend", _ => { this.map.changed() })
         $(this).on("touchmove", e => { 
             e.stopPropagation()
+            let trans = this.map.transform
             let clientX = e.touches[0].clientX
             let clientY = e.touches[0].clientY
             let rect = this.map.getBoundingClientRect()
@@ -216,8 +216,8 @@ export class GenericNode extends HTMLElement {
             if (this.touchOffset) { 
                 offset = { x : this.touchOffset.x, y : this.touchOffset.y } 
             }
-            this.left = clientX - rect.x - offset.x
-            this.top = clientY - rect.y - offset.y
+            this.left = (clientX - rect.x - offset.x - trans.x) / trans.scale
+            this.top = (clientY - rect.y - offset.y - trans.y) / trans.scale
             this.map.redrawEdges()
         })
     }
