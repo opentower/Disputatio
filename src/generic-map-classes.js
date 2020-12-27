@@ -216,8 +216,8 @@ export class GenericNode extends HTMLElement {
             if (this.touchOffset) { 
                 offset = { x : this.touchOffset.x, y : this.touchOffset.y } 
             }
-            this.left = (clientX - rect.x - offset.x - trans.x) / trans.scale
-            this.top = (clientY - rect.y - offset.y - trans.y) / trans.scale
+            this.left = (clientX - rect.x - trans.x) / trans.scale - offset.x 
+            this.top = (clientY - rect.y  - trans.y) / trans.scale - offset.y
             this.map.redrawEdges()
         })
     }
