@@ -81,6 +81,7 @@ export class Assertion extends Gen.GenericNode {
         $(this).on("dragstop",_=> this.style.zIndex = 5)
         this.isAssertion = true
         this.dragStop = this.dragStopDefault
+        this.touchEnd = this.dragStopDefault
         this.input = document.createElement("textarea");
         this.input.mapNode = this
     }
@@ -221,7 +222,11 @@ export class Cluster extends Gen.GenericNode {
         node.dragStart = _ => {
             node.dragOffset = {x : node.offsetLeft, y : node.offsetTop}
         }
-        node.dragStop = (e,ui) => { 
+        node.touchStart =  _ => {
+            let rect = this.map.getBoundingClientRect()
+            node.touchOffset = {x : this.left + node.offsetLeft, y : this.top + node.offsetTop}
+        }
+        let checkDetach = (e,ui) => { 
             if (this.map.contains(node).includes(this)) {
                 this.addNode(node) 
             } else {
@@ -247,6 +252,8 @@ export class Cluster extends Gen.GenericNode {
             this.map.redrawEdges();
             this.map.changed()
         }
+        node.dragStop = checkDetach
+        node.touchEnd = checkDetach
     }
 
     removeNode(node,ui) {
@@ -256,10 +263,17 @@ export class Cluster extends Gen.GenericNode {
         if (ui) { 
             node.top = ui.position.top + node.cluster.top + node.dragOffset.y
             node.left = ui.position.left + node.cluster.left + node.dragOffset.x
+        } else {
+            node.left = node.left + this.left
+            node.top = node.top + this.top
         }
         node.cluster = null
         delete this.nodes[node.uuid] //delete from node list
+        node.dragStart = _ => { }
+        node.touchStart = _ => { }
         node.dragStop = node.dragStopDefault
+        node.touchEnd = node.dragStopDefault
+        delete node.touchOffset
         this.map.redrawEdges();
         this.map.changed()
     }

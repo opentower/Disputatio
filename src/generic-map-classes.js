@@ -67,6 +67,7 @@ export class GenericMap extends HTMLElement {
             this.style.border = "1px solid"
             this.style.display = 'inline-block'
             this.style.position = 'relative'
+            this.style.overflow = 'hidden'
             this.initialized = true
         }
     }
@@ -99,7 +100,6 @@ export class GenericMap extends HTMLElement {
             this.present = past
             this.fromJSON(past)
         } else { console.log("no history") }
-        this.historyLock = false
     }
 
     redo() { 
@@ -111,7 +111,6 @@ export class GenericMap extends HTMLElement {
             this.present = future
             this.fromJSON(future)
         } else { console.log("no future") }
-        this.historyLock = false
     }
 
     clear() { 
@@ -197,8 +196,30 @@ export class GenericNode extends HTMLElement {
         this.bg.mapNode = this
         this.resizeObserver = new ResizeObserver(_ => this.repel())
         this.resizeObserver.observe(this)
+        this.dragStart = _ => {}
+        this.dragStop = _ => {}
+        this.touchStart = _ => {}
+        this.touchEnd = _ => {}
         this.initDrag(1)
+        $(this).on("dragstart", _ => { this.dragStart() })
+        $(this).on("dragstop", _ => { this.dragStop() })
+        $(this).on("touchstart", _ => { this.touchStart() })
+        $(this).on("touchend", _ => { this.touchEnd() })
         $(this).on("dragstop", _ => { this.map.changed() })
+        $(this).on("touchend", _ => { this.map.changed() })
+        $(this).on("touchmove", e => { 
+            e.stopPropagation()
+            let clientX = e.touches[0].clientX
+            let clientY = e.touches[0].clientY
+            let rect = this.map.getBoundingClientRect()
+            let  offset = { x: 0, y: 0 } 
+            if (this.touchOffset) { 
+                offset = { x : this.touchOffset.x, y : this.touchOffset.y } 
+            }
+            this.left = clientX - rect.x - offset.x
+            this.top = clientY - rect.y - offset.y
+            this.map.redrawEdges()
+        })
     }
 
     connectedCallback() {
@@ -282,9 +303,6 @@ export class GenericNode extends HTMLElement {
 
     set left(x) { this.style.left = x + "px" }
 
-    set dragStart(f) { $(this).draggable("option","start",f) }
-
-    set dragStop(f) { $(this).draggable("option","stop",f) }
 
     toJSON() { 
         return { 
