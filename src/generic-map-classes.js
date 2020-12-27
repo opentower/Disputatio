@@ -1,6 +1,8 @@
 var $ = require("jquery")
 var panzoom = require("panzoom")
 require("jquery-ui/ui/widgets/draggable")
+window.jQuery = $
+require("jquery-ui-touch-punch")
 var RelativeLine = require("./graphical-classes.js")
 var genericMapCss = require("./generic-map.css").default.toString()
 
@@ -61,7 +63,9 @@ export class GenericMap extends HTMLElement {
                 beforeMouseDown: e => { 
                     return !(e.altKey && e.target.classList.contains("frame"))
                 },
+                onTouch: e => { return false }
             })
+            this.zoom.pause()
             this.style.border = "1px solid"
             this.style.display = 'inline-block'
             this.style.position = 'relative'
