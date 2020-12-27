@@ -11,18 +11,14 @@
   "author": "Graham Leach-Krouse",
   "license": "MIT",
   "devDependencies": {
-    "script-loader": "^0.7.2",
-    "skeleton-loader": "^2.0.0",
+    "css-loader": "^5.0.1",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.10"
   },
   "dependencies": {
-    "anim-event": "^1.0.16",
-    "cssprefix": "^2.0.16",
     "jquery": "^3.5.1",
     "jquery-ui": "^1.12.1",
-    "m-class-list": "^1.1.9",
-    "panzoom": "^9.2.4",
-    "pointer-event": "^1.0.0"
+    "jquery-ui-touch-punch": "^0.2.3",
+    "panzoom": "^9.2.4"
   }
 }

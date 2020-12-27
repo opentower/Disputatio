@@ -1,36 +1,34 @@
+var $ = require("jquery")
+
 class RelativeLine {
-    constructor(s,t,svg) {
-        this.svg = svg
+    constructor(s,t,map) {
+        this.map = map
         this.source = s
         this.target = t
         this.midpoint= document.createElementNS("http://www.w3.org/2000/svg", 'foreignObject');
         this.path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
         this.head = document.createElementNS("http://www.w3.org/2000/svg", 'path');
         this.label = document.createElementNS("http://www.w3.org/1999/xhtml","span")
-        this.path.style.stroke = "#000"; 
-        this.path.style.fill = "none"; 
-        this.path.style.strokeWidth = "5px";
-        this.head.style.stroke = "#000"; 
-        this.head.style.fill = "none"; 
-        this.midpoint.setAttribute("width","100px")
-        this.midpoint.setAttribute("height","100px")
-        this.head.style.strokeWidth = "5px";
-        svg.appendChild(this.path)
-        svg.appendChild(this.midpoint)
-        svg.appendChild(this.head)
+        this.path.classList.add("argumentPath")
+        this.head.classList.add("argumentHead")
+        this.midpoint.classList.add("argumentDeco")
+        this.map.svg.appendChild(this.path)
+        this.map.svg.appendChild(this.midpoint)
+        this.map.svg.appendChild(this.head)
         this.midpoint.appendChild(this.label)
-        console.log(this.target)
         this.updatePosition()
     }
 
     updatePosition () {
-        let svgrect = this.svg.getBoundingClientRect()
+        let svgrect = this.map.svg.getBoundingClientRect()
         let srect = this.source.getBoundingClientRect()
         let trect = this.target.getBoundingClientRect()
-        let origin = { x: srect.x - svgrect.x + srect.width/2
-                     , y: srect.y - svgrect.y + srect.height}
-        let destination = { x: trect.x - svgrect.x + trect.width/2
-                          , y: trect.y - svgrect.y - 10}
+        let zoom
+        if (this.map.transform) { zoom = this.map.transform.scale } else { zoom = 1 }
+        let origin = { x: (srect.x - svgrect.x + srect.width/2)/zoom
+                     , y: (srect.y - svgrect.y + srect.height)/zoom - 1}
+        let destination = { x: (trect.x - svgrect.x + trect.width/2)/zoom
+                          , y: (trect.y - svgrect.y)/zoom - 10}
         this.path.setAttribute("d", "M" + origin.x + "," + origin.y 
                                         + " C" + origin.x + "," + (origin.y + 90) 
                                         + " " + destination.x + "," + (destination.y - 90) 
@@ -43,17 +41,20 @@ class RelativeLine {
     }
 
     remove() { 
-        this.svg.removeChild(this.path)
-        this.svg.removeChild(this.midpoint) 
-        this.svg.removeChild(this.head) 
+        this.map.svg.removeChild(this.path)
+        this.map.svg.removeChild(this.midpoint) 
+        this.map.svg.removeChild(this.head) 
     }
 
-    set color (c) { 
-        this.path.style.stroke = c; 
-        this.head.style.stroke = c; 
+    get valence () { 
+        return this.path.dataset.valence 
     }
 
-    get color () { return this.path.style.stroke }
+    set valence (c) { 
+        this.path.dataset.valence = c; 
+        this.head.dataset.valence = c; 
+    }
+
 }
 
 module.exports = RelativeLine;

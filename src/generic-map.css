@@ -1,0 +1,111 @@
+.svg {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 2;
+}
+
+.frame {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.surface {
+    width: 10000px; /* setting this too narrow creates visual glitches, */ 
+    height: 1px;
+    z-index: 0;
+}
+
+.genericNode {
+    display: inline-block;
+    border-width: 2px;
+    border-style: solid;
+    border-radius:12px;
+    border-color: gray;
+}
+
+.genericNode > div:first-child {
+    display: inline-block;
+    position: absolute;
+    background: white;
+    border-radius:12px;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    cursor: grab;
+}
+
+.genericNode > div:first-child:active {
+    cursor: grabbing;
+}
+
+.argumentPath {
+    stroke: #000; 
+    fill: none; 
+    stroke-width: 5px;
+}
+
+.argumentPath[data-valence="pro"], 
+.argumentHead[data-valence="pro"]
+{ stroke: green; }
+
+.argumentPath[data-valence="con"], 
+.argumentHead[data-valence="con"]
+{ stroke: red; }
+
+.argumentHead {
+    stroke: #000; 
+    fill: none; 
+    stroke-width: 5px;
+}
+
+.argumentDeco {
+    width: 100px;
+    height: 100px;
+}
+
+.focalNode {
+    border-width: 5px;
+    border-style:solid;
+}
+
+.assertionNode {
+    padding: 10px;
+}
+
+.assertionNode > textarea {
+    position: relative;
+    resize: none;
+    border: none;
+    font-family: 'Crimson Pro';
+    font-size:14pt;
+    outline:none;
+}
+
+.assertionNode.focalNode {
+    padding: 7px;
+}
+
+.clusterNode {
+    padding:5px
+}
+
+.clusterNode.focalNode {
+    padding: 2px;
+}
+
+.clusterNode > div > .assertionNode {
+    margin:5px
+}
+
+.clusterNode[data-valence="pro"]{
+    border-color: green;
+}
+
+.clusterNode[data-valence="con"]{
+    border-color: red;
+}

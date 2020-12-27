@@ -32,13 +32,13 @@ disputatio-analysis > div:first-child { display: block; }
 #mapContainer {
     position:fixed;
     top:0px;
+    bottom:0px;
     left:0px;
     right:50%;
-    bottom:0px;
     padding:50px;
 }
 
-disputatio-argumentmap {
+disputatio-scaffolded-map {
     display:inline-block;
     width:100%;
     height:100%;
@@ -47,7 +47,7 @@ disputatio-argumentmap {
 }
 
 @media screen and (max-width: 1100px) {
-    disputatio-argumentmap {
+    disputatio-scaffolded-map {
         height:400px;
     }
     disputatio-analysis  {
@@ -56,6 +56,7 @@ disputatio-argumentmap {
     }
     #mapContainer {
         right:0px;
+        bottom:50%;
     }
 }
 
@@ -64,8 +65,8 @@ disputatio-argumentmap {
     <body>
         <article>
             <div id="mapContainer">
-                <disputatio-argumentmap id="theGraph">
-                </disputatio-argumentmap>
+                <disputatio-scaffolded-map id="theGraph">
+                </disputatio-scaffolded-map>
             </div>
             <disputatio-analysis >
                 <div id="p1">
