@@ -1,8 +1,6 @@
 var $ = require("jquery")
 var panzoom = require("panzoom")
 require("jquery-ui/ui/widgets/draggable")
-window.jQuery = $
-require("jquery-ui-touch-punch")
 var RelativeLine = require("./graphical-classes.js")
 var genericMapCss = require("./generic-map.css").default.toString()
 
