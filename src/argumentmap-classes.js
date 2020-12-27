@@ -381,10 +381,13 @@ export class KeyboardFreeformDebateMap extends DebateMap {
         if (node.cluster) pos = node.cluster  // if the node is clustered, we use that for positioning
         else pos = node
         let support = this.createAssertion(pos.left - 10, pos.top - 200, {})
+        //we need to set a value to make sure the support node isn't cleared during clustering
+        support.input.value = " "
         this.focalNode = this.createCluster(support)
         this.createEdge(this.focalNode, node)
         this.focalNode.valence = "pro"
         this.focalNode.repel()
+        support.input.value = "" 
         support.input.focus()
         return this.focalNode
     }
