@@ -208,6 +208,7 @@ export class GenericNode extends HTMLElement {
         $(this).on("touchend", _ => { this.map.changed() })
         $(this).on("touchmove", e => { 
             e.stopPropagation()
+            e.preventDefault()
             let trans = this.map.transform
             let clientX = e.touches[0].clientX
             let clientY = e.touches[0].clientY
