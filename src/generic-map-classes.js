@@ -200,15 +200,15 @@ export class GenericNode extends HTMLElement {
         this.dragStart = _ => {}
         this.dragStop = _ => {}
         this.touchStart = _ => {}
-        this.touchEnd = _ => {}
         this.initDrag(1)
         $(this).on("dragstart", _ => { this.dragStart() })
         $(this).on("dragstop", _ => { this.dragStop() })
         $(this).on("touchstart", _ => { this.touchStart() })
-        $(this).on("touchend", _ => { this.touchEnd() })
+        $(this).on("touchend", _ => {if (this.dragged) { this.dragStop(); this.dragged = false }})
         $(this).on("dragstop", _ => { this.map.changed() })
         $(this).on("touchend", _ => { this.map.changed() })
         $(this).on("touchmove", e => { 
+            this.dragged = true
             e.stopPropagation()
             e.preventDefault()
             let trans = this.map.transform

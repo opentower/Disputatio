@@ -87,7 +87,6 @@ export class Assertion extends Gen.GenericNode {
         $(this).on("dragstop",_=> this.style.zIndex = 5)
         this.isAssertion = true
         this.dragStop = this.dragStopDefault
-        this.touchEnd = this.dragStopDefault
         this.input = document.createElement("textarea");
         this.input.mapNode = this
     }
@@ -234,6 +233,7 @@ export class Cluster extends Gen.GenericNode {
         }
         let checkDetach = e => { 
             if (this.map.contains(node).includes(this)) {
+                console.log("re-added")
                 this.addNode(node) 
             } else {
                 for (var v of this.map.contains(node)) {
@@ -259,7 +259,6 @@ export class Cluster extends Gen.GenericNode {
             this.map.changed()
         }
         node.dragStop = checkDetach
-        node.touchEnd = checkDetach
     }
 
     removeNode(node) {
@@ -276,7 +275,6 @@ export class Cluster extends Gen.GenericNode {
         node.dragStart = _ => { }
         node.touchStart = _ => { }
         node.dragStop = node.dragStopDefault
-        node.touchEnd = node.dragStopDefault
         delete node.touchOffset
         this.map.redrawEdges();
         this.map.changed()
