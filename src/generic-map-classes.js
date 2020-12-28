@@ -215,13 +215,14 @@ export class GenericNode extends HTMLElement {
             let trans = this.map.transform
             let clientX = e.touches[0].clientX
             let clientY = e.touches[0].clientY
-            let rect = this.map.getBoundingClientRect()
+            let maprect = this.map.getBoundingClientRect()
+            let thisrect = this.getBoundingClientRect()
             let  offset = { x: 0, y: 0 } 
             if (this.touchOffset) { 
                 offset = { x : this.touchOffset.x, y : this.touchOffset.y } 
             }
-            this.left = (clientX - rect.x - trans.x) / trans.scale - offset.x 
-            this.top = (clientY - rect.y  - trans.y) / trans.scale - offset.y
+            this.left = (clientX - maprect.x - trans.x- thisrect.width) / trans.scale - offset.x - 15
+            this.top = (clientY - maprect.y  - trans.y - thisrect.height) / trans.scale - offset.y- 15
             this.map.redrawEdges()
         })
     }
