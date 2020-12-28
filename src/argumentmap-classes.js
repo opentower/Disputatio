@@ -226,7 +226,7 @@ export class Cluster extends Gen.GenericNode {
             let rect = this.map.getBoundingClientRect()
             node.touchOffset = {x : this.left + node.offsetLeft, y : this.top + node.offsetTop}
         }
-        let checkDetach = (e,ui) => { 
+        let checkDetach = e => { 
             if (this.map.contains(node).includes(this)) {
                 this.addNode(node) 
             } else {
@@ -245,7 +245,7 @@ export class Cluster extends Gen.GenericNode {
                         return
                     }
                 }
-                this.removeNode(node,ui)
+                this.removeNode(node)
                 this.map.focalNode = node
             }
             this.map.focalNode = this
@@ -256,18 +256,16 @@ export class Cluster extends Gen.GenericNode {
         node.touchEnd = checkDetach
     }
 
-    removeNode(node,ui) {
+    removeNode(node) {
+        let borderwidth = parseInt(getComputedStyle(this).borderWidth)
+        let relOffsetLeft = node.offsetLeft + borderwidth
+        let relOffsetTop = node.offsetTop + borderwidth
         node.style.position = "absolute"
         node.initDrag(1) //resume translation
         this.map.surface.appendChild(node) //reattach to map
-        if (ui) { 
-            node.top = ui.position.top + node.cluster.top + node.dragOffset.y
-            node.left = ui.position.left + node.cluster.left + node.dragOffset.x
-        } else {
-            node.left = node.left + this.left
-            node.top = node.top + this.top
-        }
-        node.cluster = null
+        node.left = relOffsetLeft + this.left
+        node.top = relOffsetTop + this.top
+        delete node.cluster
         delete this.nodes[node.uuid] //delete from node list
         node.dragStart = _ => { }
         node.touchStart = _ => { }
