@@ -41,6 +41,7 @@ export class GenericMap extends HTMLElement {
 
         this.addEventListener("changed", _ => this.updateHistory())
         this.addEventListener('dragover', e => e.preventDefault())
+        this.addEventListener('touchmove', e => e.preventDefault())
         this.shadow = this.attachShadow({mode: 'open'})
     }
 
@@ -61,7 +62,9 @@ export class GenericMap extends HTMLElement {
                 beforeMouseDown: e => { 
                     return !(e.altKey && e.target.classList.contains("frame"))
                 },
-                onTouch: e => { return false }
+                onTouch: e => { 
+                    return false 
+                }
             })
             this.style.border = "1px solid"
             this.style.display = 'inline-block'
@@ -226,7 +229,9 @@ export class GenericNode extends HTMLElement {
     connectedCallback() {
         if (!this.initialized) {
             this.classList.add("genericNode")
-            this.style.position = 'absolute' //overridden by panzoom and switched around a lot, hence set here rather than in the css.
+            this.style.position = 'absolute' 
+            //position is overridden by panzoom and switched around a lot,
+            //hence set here rather than in the css.
             this.appendChild(this.bg)
             this.initialized = true
         }
