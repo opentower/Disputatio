@@ -311,7 +311,6 @@ export class GenericNode extends HTMLElement {
 
     set left(x) { this.style.left = x + "px" }
 
-
     toJSON() { 
         return { 
             config: {
