@@ -68,6 +68,7 @@ export class GenericMap extends HTMLElement {
             this.style.display = 'inline-block'
             this.style.position = 'relative'
             this.style.overflow = 'hidden'
+            this.style.touchAction = 'manipulation'
             this.initialized = true
         }
     }
