@@ -4,13 +4,15 @@ var Gen = require("./generic-map-classes")
 class DebateMap extends Gen.GenericMap {
 
     constructor() { 
-        super() 
-        this.frame.addEventListener('click',this.handleClick)
+        super()
+        this.frame.addEventListener('click', this.handleClick)
     }
 
     handleClick(e) {
         let theMap = this.map
-        if (theMap.focalNode && e.target.mapNode && e.shiftKey) { //holding shift makes the click manipulate arrows.
+        if (theMap.focalNode && e.target.mapNode && (e.shiftKey || e.detail == 2)) { 
+            //holding shift or double-click makes the click manipulate arrows.
+            clearTimeout(this.doubleClickTimeout)
             let targetNode = e.target.mapNode
             if (targetNode.uuid in theMap.focalNode.outgoing) { 
                 if (theMap.focalNode.valence == "pro") { //turn support into denial
@@ -31,14 +33,18 @@ class DebateMap extends Gen.GenericMap {
                     theMap.createEdge(theMap.focalNode, targetNode)
                     theMap.focalNode.valence = "pro"
                 }
+                theMap.focalNode.updateIncoming()
             } 
-            theMap.focalNode.updateIncoming()
         } else if (e.target.mapNode) {
-            if (e.target.mapNode.cluster && e.target.mapNode.cluster.parentNode == theMap.surface) {//without shift, click updates focus
-                theMap.focalNode = e.target.mapNode.cluster
-            } else if (e.target.mapNode.parentNode == theMap.surface) { 
-                theMap.focalNode = e.target.mapNode
-            }
+            // without shift, click updates focus, assuming no second click cancels
+            let mapNode = e.target.mapNode
+            this.doubleClickTimeout = setTimeout(_ => {
+                if (mapNode.cluster && mapNode.cluster.parentNode == theMap.surface) {
+                    theMap.focalNode = mapNode.cluster
+                } else if (mapNode.parentNode == theMap.surface) { 
+                    theMap.focalNode = mapNode
+                }
+            },250)
         }
     }
 
@@ -346,7 +352,7 @@ export class FreeformDebateMap extends DebateMap {
     constructor() { super() }
 
     handleClick (e) {
-        if (e.target == this && !e.altKey) { 
+        if (e.target == this) { 
             let rect = this.map.surface.getBoundingClientRect()
             let zoom = this.map.transform.scale
             this.map.createAssertion((e.clientX - rect.left - 20)/zoom, (e.clientY - rect.top - 20)/zoom) 
