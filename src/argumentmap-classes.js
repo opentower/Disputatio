@@ -6,7 +6,6 @@ class DebateMap extends Gen.GenericMap {
     constructor() { 
         super()
         this.frame.addEventListener('click', this.handleClick)
-        this.frame.addEventListener('click', e => e.preventDefault())
     }
 
     handleClick(e) {
