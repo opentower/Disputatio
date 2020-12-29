@@ -256,9 +256,12 @@ export class GenericNode extends HTMLElement {
             },
             drag: function(event, ui) {
                     var trans = this.map.transform
-                    var changeLeft = ui.position.left - (ui.originalPosition.left + (trans.x * translationFactor)); // find change in left
+                    var scrollLeft = this.map.frame.scrollLeft
+                    var scrollTop = this.map.frame.scrollTop
+                    console.log(scrollLeft)
+                    var changeLeft = ui.position.left - (ui.originalPosition.left + ((trans.x - scrollLeft )* translationFactor) ); // find change in left
                     var newLeft = ui.originalPosition.left + changeLeft / trans.scale; // adjust new left by our zoomScale
-                    var changeTop = ui.position.top - (ui.originalPosition.top + (trans.y * translationFactor)); // find change in top
+                    var changeTop = ui.position.top - (ui.originalPosition.top + ((trans.y - scrollTop) * translationFactor) ); // find change in top
                     var newTop = ui.originalPosition.top + changeTop / trans.scale; // adjust new top by our zoomScale
                     ui.position.left = newLeft;
                     ui.position.top = newTop;
