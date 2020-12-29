@@ -250,7 +250,7 @@ disputatio-scaffolded-map {
             let json = JSON.stringify(theGraph)
             console.log(json)
             targets.forEach(t => {
-                if (disputatio.subTest(t.goal,json) && disputatio.subTest(json,t.goal)) {
+                if (Disputatio.subTest(t.goal,json) && Disputatio.subTest(json,t.goal)) {
                     document.getElementById(t.id).style.display = "block"
                 }
             })

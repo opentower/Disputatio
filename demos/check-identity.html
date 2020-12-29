@@ -8,7 +8,7 @@
             function checkEquality () {
                 let json1 = JSON.stringify(document.getElementById("graph1"))
                 let json2 = JSON.stringify(document.getElementById("graph2"))
-                let rslt = disputatio.subTest(json1,json2) && disputatio.subTest(json2,json1)
+                let rslt = Disputatio.subTest(json1,json2) && Disputatio.subTest(json2,json1)
                 if (rslt) {alert("graph 1 is equivalent to graph 2")}
                 else {alert("graph 1 is not equivalent to graph 2")}
             }

@@ -1,6 +1,6 @@
 module.exports = {
   output: {
-    library: "disputatio",
+    library: "Disputatio",
   },
   module: { 
       rules: [
