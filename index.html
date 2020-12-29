@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width" />
+        <title>Disputatio</title>
+        <link rel="preconnect" href="https://fonts.gstatic.com">
+        <link href="https://fonts.googleapis.com/css2?family=Vesper+Libre&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Raleway&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css" type="text/css" media="screen" title="no title" charset="utf-8">
+        <script src="https://cdn.jsdelivr.net/npm/dnd-touch-polyfill@0.0.7/lib/index.min.js"></script>
+        <script charset="utf-8" src="./dist/main.js"></script>
+        <style type="text/css" media="screen">
+            h1 { 
+                font-family: "Vesper Libre";
+                margin-top:6rem;
+            }
+
+            .container { max-width: 800px }
+            
+        </style>
+        <style type="text/css">
+        <!--
+        pre { font-family: monospace; color: #303030 }
+        * { font-size: 1em; }
+        .Function { color: #ff005f; }
+        .Type { color: #878787; }
+        .String { color: #444444; }
+        .LineNr { color: #5f5f5f; background-color: #c6c6c6; padding-bottom: 2px; }
+        .Statement { color: #5f5faf; }
+        .Identifier { color: #ff005f; }
+        -->
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Disputatio</h1>
+            <p>Disputatio is a set of web components for drawing different kinds of directed graphs on the web. You can use it for argument mapping, or maybe you can think of other things to do with it. Here's an example of what a free-form argument map looks like in Disputatio:</p>
+            <disputatio-argumentmap id="example1" style="margin:10px;width:100%; height:500px">
+            </disputatio-argumentmap>
+            <script charset="utf-8">
+                document.getElementById("example1").fromJSON("{\"nodes\":{\"u0kp5yaoksb\":{\"config\":{\"uuid\":\"u0kp5yaoksb\",\"value\":\"God is that than which nothing greater can be conceived.\",\"implicit\":false},\"incoming\":[],\"outgoing\":[],\"top\":0,\"left\":0,\"role\":\"assertion\"},\"993o24g96bq\":{\"config\":{\"uuid\":\"993o24g96bq\",\"value\":\"If something can fail to exist, then something greater than it can be conceived.\",\"implicit\":false},\"incoming\":[],\"outgoing\":[],\"top\":0,\"left\":0,\"role\":\"assertion\"},\"l2o90dvx2rc\":{\"config\":{\"uuid\":\"l2o90dvx2rc\",\"value\":\"God Exists\",\"implicit\":false},\"incoming\":[\"pwg3aapddjn\"],\"outgoing\":[],\"top\":419,\"left\":617,\"role\":\"assertion\"},\"l342xku8qds\":{\"config\":{\"uuid\":\"l342xku8qds\",\"value\":\"A perfect island would be an island than which no greater island can be conceived. But no perfect island exists.\",\"implicit\":false},\"incoming\":[],\"outgoing\":[],\"top\":0,\"left\":0,\"role\":\"assertion\"},\"pwg3aapddjn\":{\"config\":{\"uuid\":\"pwg3aapddjn\"},\"incoming\":[\"7iqomw9crvn\"],\"outgoing\":[\"l2o90dvx2rc\"],\"top\":78,\"left\":10,\"role\":\"cluster\",\"nodes\":[\"u0kp5yaoksb\",\"993o24g96bq\"],\"valence\":\"pro\"},\"7iqomw9crvn\":{\"config\":{\"uuid\":\"7iqomw9crvn\"},\"incoming\":[],\"outgoing\":[\"pwg3aapddjn\"],\"top\":20,\"left\":517,\"role\":\"cluster\",\"nodes\":[\"l342xku8qds\"],\"valence\":\"con\"}},\"focus\":{\"config\":{\"uuid\":\"7iqomw9crvn\"},\"incoming\":[],\"outgoing\":[\"pwg3aapddjn\"],\"top\":20,\"left\":517,\"role\":\"cluster\",\"nodes\":[\"l342xku8qds\"],\"valence\":\"con\"}}")
+            </script>
+            <p>The editing controls for the freeform map should be pretty simple.</p>
+            <ol style="padding-left:20px">
+                <li>You combine statements by dragging one on to the other.</li>
+                <li>You remove statements from clusters by dragging them out.</li>
+                <li>You change the focused statement (or cluster) by clicking or tapping.</li>
+                <li>You indicate that the focused statement (or cluster) favors something by double-clicking or double-tapping on the support target. You can change the relation to disfavoring with another double click, and remove it with a third double click. You can also hold down shift and click.</li>
+                <li>You can pan and zoom by dragging and pinching the canvas, or by using your mouse wheel.</li>
+                <li>Finally, if you want to target the validity of a favoring relation, rather than targeting a particular claim, then you should double-click or shift-click on the cluster from which the arrow emanates</li>
+            </ol>
+            <p>If you want to use Disputatio on your page, just add this tag:</p>
+
+            <pre id='vimCodeElement'>
+            <span class="Function">&lt;</span><span class="Statement">script</span><span class="Function"> </span><span class="Type">src</span><span class="Function">=</span><span class="String">&quot;disputatio&quot;</span><span class="Function">&gt;</span><span class="Identifier">&lt;/</span><span class="Statement">script</span><span class="Identifier">&gt;</span></pre>
+
+            <p>You'll then be able to add argument maps to your page as custom elements, with a small piece of HTML like this:</p>
+
+            <pre >
+            </span><span class="Function">&lt;</span><span class="Statement">disputatio-argumentmap</span><span class="Function"> </span><span class="Type">style</span><span class="Function">=</span><span class="String">&quot;width:100%; height:500px&quot;</span><span class="Function">&gt;</span> <span class="Identifier">&lt;/</span><span class="Statement">disputatio-argumentmap</span><span class="Identifier">&gt;</span></pre>
+            <p>But there's more!</p>
+            <h4>
+                Example: Events and Serialization
+            </h4>
+            <p>
+                Disputatio's maps are designed to be manipulable with JavaScript.
+                Maps fire a <code>changed</code> event on each update, they can be
+                serialized with <code>JSON.stringify</code>, cleared by calling the
+                <code>.clear()</code>method on the map, and a serialized map can be
+                inserted by using the <code>.fromJSON()</code> method.
+            </p> 
+            <p>The box on the right contains the serialization of the map on the left:</p>
+            <div class="row" style="padding:10px">
+                <div class="six columns">
+                    <disputatio-argumentmap id="example2" style="width:100%; height:250px">
+                    </disputatio-argumentmap>
+                </div>
+                <div class="six columns">
+                    <pre id="jsonPanel" style="margin:0px;border:1px dashed; height:250px;overflow:scroll"></pre>
+                </div>
+            </div>
+            <script charset="utf-8">
+                var ex2 = document.getElementById("example2");
+                var target = document.getElementById("jsonPanel");
+                ex2.fromJSON("{\"nodes\":{\"hiexh22g0fq\":{\"config\":{\"uuid\":\"hiexh22g0fq\",\"value\":\"I think.\",\"implicit\":false},\"incoming\":[],\"outgoing\":[],\"top\":14,\"left\":139,\"role\":\"assertion\"},\"wat0ddbw8ks\":{\"config\":{\"uuid\":\"wat0ddbw8ks\",\"value\":\"I am.\",\"implicit\":false},\"incoming\":[],\"outgoing\":[],\"top\":144,\"left\":181,\"role\":\"assertion\"}},\"focus\":{\"config\":{\"uuid\":\"hiexh22g0fq\",\"value\":\"I think.\",\"implicit\":false},\"incoming\":[],\"outgoing\":[],\"top\":14,\"left\":139,\"role\":\"assertion\"}}")
+
+                function updateJSON () { 
+                    let theJSON = JSON.stringify(ex2, null,4)
+                    target.innerHTML = theJSON
+                }
+                updateJSON()
+                ex2.addEventListener("changed",updateJSON);
+            </script>
+            <p>Here's the code for this example, minus the JSON data:</p>
+<pre style="overflow:scroll;">
+    <span id="L1" class="LineNr"> 1 </span><span class="Function">&lt;</span><span class="Statement">script</span><span class="Function"> </span><span class="Type">charset</span><span class="Function">=</span><span class="String">&quot;utf-8&quot;</span><span class="Function">&gt;</span>
+    <span id="L2" class="LineNr"> 2 </span>    <span class="Type">var</span> ex2 <span class="Operator">=</span> <span class="Constant">document</span>.<span class="Function">getElementById</span>(<span class="String">&quot;example2&quot;</span>);
+    <span id="L3" class="LineNr"> 3 </span>    <span class="Type">var</span> target <span class="Operator">=</span> <span class="Constant">document</span>.<span class="Function">getElementById</span>(<span class="String">&quot;jsonPanel&quot;</span>);
+    <span id="L4" class="LineNr"> 4 </span>    ex2.<span class="Function">fromJSON</span>(...)
+    <span id="L5" class="LineNr"> 5 </span>
+    <span id="L6" class="LineNr"> 6 </span>    <span class="Type">function</span> <span class="Function">updateJSON</span> () {
+    <span id="L7" class="LineNr"> 7 </span>        <span class="Type">let</span> theJSON <span class="Operator">=</span> <span class="Constant">JSON</span>.<span class="Function">stringify</span>(ex2, <span class="Type">null</span>,<span class="Number">4</span>)
+    <span id="L8" class="LineNr"> 8 </span>        target.innerHTML <span class="Operator">=</span> theJSON
+    <span id="L9" class="LineNr"> 9 </span>    }
+    <span id="L10" class="LineNr">10 </span>    <span class="Function">updateJSON</span>()
+    <span id="L11" class="LineNr">11 </span>    ex2.<span class="Function">addEventListener</span>(<span class="String">&quot;changed&quot;</span>,updateJSON);
+    <span id="L12" class="LineNr">12 </span><span class="Identifier">&lt;/</span><span class="Statement">script</span><span class="Identifier">&gt;</span></pre>
+            <h4>Example: History</h4>
+                <p>You can undo and redo changes to the map with the
+                <code>.undo()</code> and <code>.redo()</code> methods:
+                </p>
+                <disputatio-argumentmap id="example3" style="width:100%; height:250px">
+                </disputatio-argumentmap>
+                <button id="undo">undo</button><button id="redo">redo</button>
+                <script charset="utf-8">
+                    var ex3 = document.getElementById("example3");
+                    var b1 = document.getElementById("undo");
+                    var b2 = document.getElementById("redo");
+                    b1.addEventListener("click",_ => { ex3.undo() })
+                    b2.addEventListener("click",_ => { ex3.redo() })
+                </script>
+
+                <p>Here's the code for this example:</p>
+<pre style="overflow:scroll">
+    <span id="L1" class="LineNr">1 </span><span class="Function">&lt;</span><span class="Statement">script</span><span class="Function"> </span><span class="Type">charset</span><span class="Function">=</span><span class="String">&quot;utf-8&quot;</span><span class="Function">&gt;</span>
+    <span id="L2" class="LineNr">2 </span>    <span class="Type">var</span> ex3 <span class="Operator">=</span> <span class="Constant">document</span>.<span class="Function">getElementById</span>(<span class="String">&quot;example3&quot;</span>);
+    <span id="L3" class="LineNr">3 </span>    <span class="Type">var</span> b1 <span class="Operator">=</span> <span class="Constant">document</span>.<span class="Function">getElementById</span>(<span class="String">&quot;undo&quot;</span>);
+    <span id="L4" class="LineNr">4 </span>    <span class="Type">var</span> b2 <span class="Operator">=</span> <span class="Constant">document</span>.<span class="Function">getElementById</span>(<span class="String">&quot;redo&quot;</span>);
+    <span id="L5" class="LineNr">5 </span>    b1.<span class="Function">addEventListener</span>(<span class="String">&quot;click&quot;</span>,<span class="Type">_</span> <span class="Type">=&gt;</span> { ex3.<span class="Function">undo</span>() })
+    <span id="L6" class="LineNr">6 </span>    b2.<span class="Function">addEventListener</span>(<span class="String">&quot;click&quot;</span>,<span class="Type">_</span> <span class="Type">=&gt;</span> { ex3.<span class="Function">redo</span>() })
+    <span id="L7" class="LineNr">7 </span><span class="Identifier">&lt;/</span><span class="Statement">script</span><span class="Identifier">&gt;</span>
+</pre>
+            <h4>Example: Comparison</h4>
+            <p>
+                Disputatio also provides a function
+                <code>Disputatio.subTest</code>, for comparing two
+                serializations, in order to determine whether one graph is part of
+                another. This can be used to check graphs for equality, or to check
+                whether a graph is equal to a stored example.
+            </p>
+            <div class="row" style="padding:10px">
+                <div class="six columns">
+                    <disputatio-argumentmap id="example4" style="width:100%; height:250px">
+                    </disputatio-argumentmap>
+                </div>
+                <div class="six columns">
+                    <disputatio-argumentmap id="example5" style="width:100%; height:250px">
+                    </disputatio-argumentmap>
+                </div>
+                <div>
+                    Map 1 <span id="result">is equal to</span> Map 2
+                </div>
+            </div>
+            <script>
+                var ex4 = document.getElementById("example4");
+                var ex5 = document.getElementById("example5");
+                var result = document.getElementById("result");
+                function compare() {
+                    let js1 = JSON.stringify(ex4)
+                    let js2 = JSON.stringify(ex5)
+                    let contained = Disputatio.subTest(js1,js2)
+                    let contains = Disputatio.subTest(js2,js1)
+                    if (contains && contained) result.innerHTML = "is equal to"
+                    else if (contains) result.innerHTML = "contains"
+                    else if (contained) result.innerHTML = "is contained in"
+                    else result.innerHTML = "is distinct from"
+                }
+                ex4.addEventListener("changed",compare)
+                ex5.addEventListener("changed",compare)
+            </script>
+                <pre>
+    <span id="L1" class="LineNr"> 1 </span><span class="Function">&lt;</span><span class="Statement">script</span><span class="Function">&gt;</span>
+    <span id="L2" class="LineNr"> 2 </span>    <span class="Type">var</span> ex4 <span class="Operator">=</span> <span class="Constant">document</span>.<span class="Function">getElementById</span>(<span class="String">&quot;example4&quot;</span>);
+    <span id="L3" class="LineNr"> 3 </span>    <span class="Type">var</span> ex5 <span class="Operator">=</span> <span class="Constant">document</span>.<span class="Function">getElementById</span>(<span class="String">&quot;example5&quot;</span>);
+    <span id="L4" class="LineNr"> 4 </span>    <span class="Type">var</span> result <span class="Operator">=</span> <span class="Constant">document</span>.<span class="Function">getElementById</span>(<span class="String">&quot;result&quot;</span>);
+    <span id="L5" class="LineNr"> 5 </span>    <span class="Type">function</span> <span class="Function">compare</span>() {
+    <span id="L6" class="LineNr"> 6 </span>        <span class="Type">let</span> js1 <span class="Operator">=</span> <span class="Constant">JSON</span>.<span class="Function">stringify</span>(ex4)
+    <span id="L7" class="LineNr"> 7 </span>        <span class="Type">let</span> js2 <span class="Operator">=</span> <span class="Constant">JSON</span>.<span class="Function">stringify</span>(ex5)
+    <span id="L8" class="LineNr"> 8 </span>        <span class="Type">let</span> contained <span class="Operator">=</span> Disputatio.<span class="Function">subTest</span>(js1,js2)
+    <span id="L9" class="LineNr"> 9 </span>        <span class="Type">let</span> contains <span class="Operator">=</span> Disputatio.<span class="Function">subTest</span>(js2,js1)
+    <span id="L10" class="LineNr">10 </span>        <span class="Statement">if</span> (contains <span class="Operator">&amp;&amp;</span> contained) result.innerHTML <span class="Operator">=</span> <span class="String">&quot;is equal to&quot;</span>
+    <span id="L11" class="LineNr">11 </span>        <span class="Statement">else</span> <span class="Statement">if</span> (contains) result.innerHTML <span class="Operator">=</span> <span class="String">&quot;contains&quot;</span>
+    <span id="L12" class="LineNr">12 </span>        <span class="Statement">else</span> <span class="Statement">if</span> (contained) result.innerHTML <span class="Operator">=</span> <span class="String">&quot;is contained in&quot;</span>
+    <span id="L13" class="LineNr">13 </span>        <span class="Statement">else</span> result.innerHTML <span class="Operator">=</span> <span class="String">&quot;is distinct from&quot;</span>
+    <span id="L14" class="LineNr">14 </span>    }
+    <span id="L15" class="LineNr">15 </span>    ex4.<span class="Function">addEventListener</span>(<span class="String">&quot;changed&quot;</span>,compare)
+    <span id="L16" class="LineNr">16 </span>    ex5.<span class="Function">addEventListener</span>(<span class="String">&quot;changed&quot;</span>,compare)
+    <span id="L17" class="LineNr">17 </span><span class="Identifier">&lt;/</span><span class="Statement">script</span><span class="Identifier">&gt;</span>
+</pre>
+        <h4>Example: Drag and Drop</h4>
+        <p>Disputatio handles HTML5 drag and drop, too, for structured extraction of arguments from text:</p>
+        <div class="row" style="padding:10px">
+            <div class="six columns">
+                <disputatio-scaffolded-map id="example6" style="width:100%; height:500px">
+                </disputatio-scaffolded-map>
+            </div>
+            <div class="six columns">
+                <disputatio-analysis>
+                    <p>
+                    “I fancy your reason for believing that each idea is one is something like this; {when there is a number of things which seem to you to be great, you may think, as you look at them all, that there is one and the same idea in them, and hence you think the great is one.| For any collection of things exemplifying greatness give there's an idea of greatness (not in the collection) that unifies the collection}”</p>
+                    <p>“That is true,” he said.</p>
+                    <p> “But if with your mind's eye {you regard the absolute great and these many great things in the same way| an idea of greatness is great itself}, will not another great appear beyond, by which all these must appear to be great?”</p>
+                    <p> “So it seems.”</p>
+                    <p> “That is, {another idea of greatness will appear, in addition to absolute greatness and the objects which partake of it | any collection of great things plus the idea that unifies them will give rise to a new idea unifying the new collection};  and another again in addition to these, by reason of which they are all great; and {each of your ideas will no longer be one, but their number will be infinite|There are an infinite number of ideas of greatness, not one}.”</p>
+                </disputatio-analysis>
+            </div>
+        </div>
+        <p>An argument map that handles drop events like this can be created with the HTML:</p>
+        <pre>
+            </span><span class="Function">&lt;</span><span class="Statement">disputatio-scaffolded-map</span><span class="Function"> </span><span class="Type">style</span><span class="Function">=</span><span class="String">&quot;width:100%; height:500px&quot;</span><span class="Function">&gt;</span> <span class="Identifier">&lt;/</span><span class="Statement">disputatio-scaffolded-map</span><span class="Identifier">&gt;</span></pre>
+        <p>It can accept any drop event carrying data of the type <code>application/disputatio</code>, but Disputatio provides another custom element for giving a quick draggable analysis of an argument, using the notation <code>{statement in text|premise content}</code> to create a draggable premise. Try below:
+        </p>
+        <disputatio-analysis>
+            <p contentEditable style="border:1px dashed;padding:10px">
+                An editable argument analysis area!
+            </p>
+        </disputatio-analysis>
+        This custom element can be created with
+        <pre>
+            </span><span class="Function">&lt;</span><span class="Statement">disputatio-analysis</span><span class="Function"> </span><span class="Type">style</span><span class="Function">=</span><span class="String">&quot;width:100%; height:500px&quot;</span><span class="Function">&gt;</span> <span class="Identifier">&lt;/</span><span class="Statement">disputatio-analysis</span><span class="Identifier">&gt;</span></pre>
+        <p>To make it editable, just add the <code>contentEditable</code> attribute.</p>
+        <h4>That's all for now!</h4>
+        <p>
+            But I think this is pretty cool and has some potential to be even better. Contributions of all kinds are very welcome, over at: <a href="https://github.com/opentower/Disputatio" target="_blank">our github page.</a></p>
+        </div>
+    </body>
+</html>
