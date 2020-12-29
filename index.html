@@ -8,7 +8,7 @@
         <link href="https://fonts.googleapis.com/css2?family=Vesper+Libre&display=swap" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Raleway&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css" type="text/css" media="screen" title="no title" charset="utf-8">
-        <script src="https://cdn.jsdelivr.net/npm/dnd-touch-polyfill@0.0.7/lib/index.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/gh/Bernardo-Castilho/dragdroptouch/DragDropTouch.js"></script>
         <script charset="utf-8" src="./dist/main.js"></script>
         <style type="text/css" media="screen">
             h1 { 
@@ -21,8 +21,14 @@
         </style>
         <style type="text/css">
         <!--
-        pre { font-family: monospace; color: #303030 }
-        * { font-size: 1em; }
+        pre {
+            font-family: monospace; color: #303030;
+            overflow-x: scroll;
+        }
+        pre::-webkit-scrollbar {
+            display: none;
+        }
+        pre * { font-size: 1em; }
         .Function { color: #ff005f; }
         .Type { color: #878787; }
         .String { color: #444444; }
@@ -52,13 +58,13 @@
             </ol>
             <p>If you want to use Disputatio on your page, just add this tag:</p>
 
-            <pre id='vimCodeElement'>
-            <span class="Function">&lt;</span><span class="Statement">script</span><span class="Function"> </span><span class="Type">src</span><span class="Function">=</span><span class="String">&quot;disputatio&quot;</span><span class="Function">&gt;</span><span class="Identifier">&lt;/</span><span class="Statement">script</span><span class="Identifier">&gt;</span></pre>
+<pre>
+<span class="Function">&lt;</span><span class="Statement">script</span><span class="Function"> </span><span class="Type">src</span><span class="Function">=</span><span class="String">&quot;disputatio&quot;</span><span class="Function">&gt;</span><span class="Identifier">&lt;/</span><span class="Statement">script</span><span class="Identifier">&gt;</span></pre>
 
             <p>You'll then be able to add argument maps to your page as custom elements, with a small piece of HTML like this:</p>
 
-            <pre >
-            </span><span class="Function">&lt;</span><span class="Statement">disputatio-argumentmap</span><span class="Function"> </span><span class="Type">style</span><span class="Function">=</span><span class="String">&quot;width:100%; height:500px&quot;</span><span class="Function">&gt;</span> <span class="Identifier">&lt;/</span><span class="Statement">disputatio-argumentmap</span><span class="Identifier">&gt;</span></pre>
+<pre>
+</span><span class="Function">&lt;</span><span class="Statement">disputatio-argumentmap</span><span class="Function"> </span><span class="Type">style</span><span class="Function">=</span><span class="String">&quot;width:100%; height:500px&quot;</span><span class="Function">&gt;</span> <span class="Identifier">&lt;/</span><span class="Statement">disputatio-argumentmap</span><span class="Identifier">&gt;</span></pre>
             <p>But there's more!</p>
             <h4>
                 Example: Events and Serialization
@@ -77,7 +83,7 @@
                     </disputatio-argumentmap>
                 </div>
                 <div class="six columns">
-                    <pre id="jsonPanel" style="margin:0px;border:1px dashed; height:250px;overflow:scroll"></pre>
+                    <pre id="jsonPanel" style="margin:0px;border:1px dashed; height:250px"></pre>
                 </div>
             </div>
             <script charset="utf-8">
@@ -93,19 +99,19 @@
                 ex2.addEventListener("changed",updateJSON);
             </script>
             <p>Here's the code for this example, minus the JSON data:</p>
-<pre style="overflow:scroll;">
-    <span id="L1" class="LineNr"> 1 </span><span class="Function">&lt;</span><span class="Statement">script</span><span class="Function"> </span><span class="Type">charset</span><span class="Function">=</span><span class="String">&quot;utf-8&quot;</span><span class="Function">&gt;</span>
-    <span id="L2" class="LineNr"> 2 </span>    <span class="Type">var</span> ex2 <span class="Operator">=</span> <span class="Constant">document</span>.<span class="Function">getElementById</span>(<span class="String">&quot;example2&quot;</span>);
-    <span id="L3" class="LineNr"> 3 </span>    <span class="Type">var</span> target <span class="Operator">=</span> <span class="Constant">document</span>.<span class="Function">getElementById</span>(<span class="String">&quot;jsonPanel&quot;</span>);
-    <span id="L4" class="LineNr"> 4 </span>    ex2.<span class="Function">fromJSON</span>(...)
-    <span id="L5" class="LineNr"> 5 </span>
-    <span id="L6" class="LineNr"> 6 </span>    <span class="Type">function</span> <span class="Function">updateJSON</span> () {
-    <span id="L7" class="LineNr"> 7 </span>        <span class="Type">let</span> theJSON <span class="Operator">=</span> <span class="Constant">JSON</span>.<span class="Function">stringify</span>(ex2, <span class="Type">null</span>,<span class="Number">4</span>)
-    <span id="L8" class="LineNr"> 8 </span>        target.innerHTML <span class="Operator">=</span> theJSON
-    <span id="L9" class="LineNr"> 9 </span>    }
-    <span id="L10" class="LineNr">10 </span>    <span class="Function">updateJSON</span>()
-    <span id="L11" class="LineNr">11 </span>    ex2.<span class="Function">addEventListener</span>(<span class="String">&quot;changed&quot;</span>,updateJSON);
-    <span id="L12" class="LineNr">12 </span><span class="Identifier">&lt;/</span><span class="Statement">script</span><span class="Identifier">&gt;</span></pre>
+<pre>
+<span id="L1" class="LineNr"> 1 </span><span class="Function">&lt;</span><span class="Statement">script</span><span class="Function"> </span><span class="Type">charset</span><span class="Function">=</span><span class="String">&quot;utf-8&quot;</span><span class="Function">&gt;</span>
+<span id="L2" class="LineNr"> 2 </span>    <span class="Type">var</span> ex2 <span class="Operator">=</span> <span class="Constant">document</span>.<span class="Function">getElementById</span>(<span class="String">&quot;example2&quot;</span>);
+<span id="L3" class="LineNr"> 3 </span>    <span class="Type">var</span> target <span class="Operator">=</span> <span class="Constant">document</span>.<span class="Function">getElementById</span>(<span class="String">&quot;jsonPanel&quot;</span>);
+<span id="L4" class="LineNr"> 4 </span>    ex2.<span class="Function">fromJSON</span>(...)
+<span id="L5" class="LineNr"> 5 </span>
+<span id="L6" class="LineNr"> 6 </span>    <span class="Type">function</span> <span class="Function">updateJSON</span> () {
+<span id="L7" class="LineNr"> 7 </span>        <span class="Type">let</span> theJSON <span class="Operator">=</span> <span class="Constant">JSON</span>.<span class="Function">stringify</span>(ex2, <span class="Type">null</span>,<span class="Number">4</span>)
+<span id="L8" class="LineNr"> 8 </span>        target.innerHTML <span class="Operator">=</span> theJSON
+<span id="L9" class="LineNr"> 9 </span>    }
+<span id="L10" class="LineNr">10 </span>    <span class="Function">updateJSON</span>()
+<span id="L11" class="LineNr">11 </span>    ex2.<span class="Function">addEventListener</span>(<span class="String">&quot;changed&quot;</span>,updateJSON);
+<span id="L12" class="LineNr">12 </span><span class="Identifier">&lt;/</span><span class="Statement">script</span><span class="Identifier">&gt;</span></pre>
             <h4>Example: History</h4>
                 <p>You can undo and redo changes to the map with the
                 <code>.undo()</code> and <code>.redo()</code> methods:
@@ -122,14 +128,14 @@
                 </script>
 
                 <p>Here's the code for this example:</p>
-<pre style="overflow:scroll">
-    <span id="L1" class="LineNr">1 </span><span class="Function">&lt;</span><span class="Statement">script</span><span class="Function"> </span><span class="Type">charset</span><span class="Function">=</span><span class="String">&quot;utf-8&quot;</span><span class="Function">&gt;</span>
-    <span id="L2" class="LineNr">2 </span>    <span class="Type">var</span> ex3 <span class="Operator">=</span> <span class="Constant">document</span>.<span class="Function">getElementById</span>(<span class="String">&quot;example3&quot;</span>);
-    <span id="L3" class="LineNr">3 </span>    <span class="Type">var</span> b1 <span class="Operator">=</span> <span class="Constant">document</span>.<span class="Function">getElementById</span>(<span class="String">&quot;undo&quot;</span>);
-    <span id="L4" class="LineNr">4 </span>    <span class="Type">var</span> b2 <span class="Operator">=</span> <span class="Constant">document</span>.<span class="Function">getElementById</span>(<span class="String">&quot;redo&quot;</span>);
-    <span id="L5" class="LineNr">5 </span>    b1.<span class="Function">addEventListener</span>(<span class="String">&quot;click&quot;</span>,<span class="Type">_</span> <span class="Type">=&gt;</span> { ex3.<span class="Function">undo</span>() })
-    <span id="L6" class="LineNr">6 </span>    b2.<span class="Function">addEventListener</span>(<span class="String">&quot;click&quot;</span>,<span class="Type">_</span> <span class="Type">=&gt;</span> { ex3.<span class="Function">redo</span>() })
-    <span id="L7" class="LineNr">7 </span><span class="Identifier">&lt;/</span><span class="Statement">script</span><span class="Identifier">&gt;</span>
+<pre>
+<span id="L1" class="LineNr">1 </span><span class="Function">&lt;</span><span class="Statement">script</span><span class="Function"> </span><span class="Type">charset</span><span class="Function">=</span><span class="String">&quot;utf-8&quot;</span><span class="Function">&gt;</span>
+<span id="L2" class="LineNr">2 </span>    <span class="Type">var</span> ex3 <span class="Operator">=</span> <span class="Constant">document</span>.<span class="Function">getElementById</span>(<span class="String">&quot;example3&quot;</span>);
+<span id="L3" class="LineNr">3 </span>    <span class="Type">var</span> b1 <span class="Operator">=</span> <span class="Constant">document</span>.<span class="Function">getElementById</span>(<span class="String">&quot;undo&quot;</span>);
+<span id="L4" class="LineNr">4 </span>    <span class="Type">var</span> b2 <span class="Operator">=</span> <span class="Constant">document</span>.<span class="Function">getElementById</span>(<span class="String">&quot;redo&quot;</span>);
+<span id="L5" class="LineNr">5 </span>    b1.<span class="Function">addEventListener</span>(<span class="String">&quot;click&quot;</span>,<span class="Type">_</span> <span class="Type">=&gt;</span> { ex3.<span class="Function">undo</span>() })
+<span id="L6" class="LineNr">6 </span>    b2.<span class="Function">addEventListener</span>(<span class="String">&quot;click&quot;</span>,<span class="Type">_</span> <span class="Type">=&gt;</span> { ex3.<span class="Function">redo</span>() })
+<span id="L7" class="LineNr">7 </span><span class="Identifier">&lt;/</span><span class="Statement">script</span><span class="Identifier">&gt;</span>
 </pre>
             <h4>Example: Comparison</h4>
             <p>
@@ -207,8 +213,8 @@
             </div>
         </div>
         <p>An argument map that handles drop events like this can be created with the HTML:</p>
-        <pre>
-            </span><span class="Function">&lt;</span><span class="Statement">disputatio-scaffolded-map</span><span class="Function"> </span><span class="Type">style</span><span class="Function">=</span><span class="String">&quot;width:100%; height:500px&quot;</span><span class="Function">&gt;</span> <span class="Identifier">&lt;/</span><span class="Statement">disputatio-scaffolded-map</span><span class="Identifier">&gt;</span></pre>
+<pre>
+</span><span class="Function">&lt;</span><span class="Statement">disputatio-scaffolded-map</span><span class="Function"> </span><span class="Type">style</span><span class="Function">=</span><span class="String">&quot;width:100%; height:500px&quot;</span><span class="Function">&gt;</span> <span class="Identifier">&lt;/</span><span class="Statement">disputatio-scaffolded-map</span><span class="Identifier">&gt;</span></pre>
         <p>It can accept any drop event carrying data of the type <code>application/disputatio</code>, but Disputatio provides another custom element for giving a quick draggable analysis of an argument, using the notation <code>{statement in text|premise content}</code> to create a draggable premise. Try below:
         </p>
         <disputatio-analysis>
@@ -217,8 +223,8 @@
             </p>
         </disputatio-analysis>
         This custom element can be created with
-        <pre>
-            </span><span class="Function">&lt;</span><span class="Statement">disputatio-analysis</span><span class="Function"> </span><span class="Type">style</span><span class="Function">=</span><span class="String">&quot;width:100%; height:500px&quot;</span><span class="Function">&gt;</span> <span class="Identifier">&lt;/</span><span class="Statement">disputatio-analysis</span><span class="Identifier">&gt;</span></pre>
+<pre>
+</span><span class="Function">&lt;</span><span class="Statement">disputatio-analysis</span><span class="Function"> </span><span class="Type">style</span><span class="Function">=</span><span class="String">&quot;width:100%; height:500px&quot;</span><span class="Function">&gt;</span> <span class="Identifier">&lt;/</span><span class="Statement">disputatio-analysis</span><span class="Identifier">&gt;</span></pre>
         <p>To make it editable, just add the <code>contentEditable</code> attribute.</p>
         <h4>That's all for now!</h4>
         <p>
