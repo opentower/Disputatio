@@ -200,7 +200,8 @@ export class GenericNode extends HTMLElement {
         this.dragStart = _ => {}
         this.dragStop = _ => {}
         this.touchStart = _ => {}
-        this.initDrag(1)
+        this.initDrag()
+        this.translationFactor = 1
         $(this).on("dragstart", _ => { this.dragStart() })
         $(this).on("dragstop", _ => { this.dragStop() })
         $(this).on("touchstart", _ => { this.touchStart() })
@@ -214,14 +215,17 @@ export class GenericNode extends HTMLElement {
             let trans = this.map.transform
             let clientX = e.touches[0].clientX
             let clientY = e.touches[0].clientY
+            let scrollLeft = this.map.frame.scrollLeft
+            let scrollTop = this.map.frame.scrollTop
+            console.log(scrollLeft)
             let maprect = this.map.getBoundingClientRect()
             let thisrect = this.getBoundingClientRect()
             let  offset = { x: 0, y: 0 } 
             if (this.touchOffset) { 
                 offset = { x : this.touchOffset.x, y : this.touchOffset.y } 
             }
-            this.left = (clientX - maprect.x - trans.x - thisrect.width) / trans.scale - offset.x - 15
-            this.top = (clientY - maprect.y  - trans.y - thisrect.height) / trans.scale - offset.y- 15
+            this.left = (clientX - maprect.x - trans.x - thisrect.width + scrollLeft) / trans.scale - offset.x - 15
+            this.top = (clientY - maprect.y  - trans.y - thisrect.height + scrollTop) / trans.scale - offset.y- 15
             this.map.redrawEdges()
         })
     }
@@ -245,7 +249,7 @@ export class GenericNode extends HTMLElement {
         this.attach(parent)
     }
 
-    initDrag (translationFactor) { 
+    initDrag () { 
         //need to reinitialize the drag object when reattaching the node
         //when dragging, need to translate when attached to map, and not otherwise
         $(this).draggable({
@@ -255,14 +259,13 @@ export class GenericNode extends HTMLElement {
                 this.skip = true
             },
             drag: function(event, ui) {
-                    var trans = this.map.transform
-                    var scrollLeft = this.map.frame.scrollLeft
-                    var scrollTop = this.map.frame.scrollTop
-                    console.log(scrollLeft)
-                    var changeLeft = ui.position.left - (ui.originalPosition.left + ((trans.x - scrollLeft )* translationFactor) ); // find change in left
-                    var newLeft = ui.originalPosition.left + changeLeft / trans.scale; // adjust new left by our zoomScale
-                    var changeTop = ui.position.top - (ui.originalPosition.top + ((trans.y - scrollTop) * translationFactor) ); // find change in top
-                    var newTop = ui.originalPosition.top + changeTop / trans.scale; // adjust new top by our zoomScale
+                    let trans = this.map.transform
+                    let scrollLeft = this.map.frame.scrollLeft
+                    let scrollTop = this.map.frame.scrollTop
+                    let changeLeft = ui.position.left - (ui.originalPosition.left + ((trans.x - scrollLeft )* this.translationFactor) ); // find change in left
+                    let newLeft = ui.originalPosition.left + changeLeft / trans.scale; // adjust new left by our zoomScale
+                    let changeTop = ui.position.top - (ui.originalPosition.top + ((trans.y - scrollTop) * this.translationFactor) ); // find change in top
+                    let newTop = ui.originalPosition.top + changeTop / trans.scale; // adjust new top by our zoomScale
                     ui.position.left = newLeft;
                     ui.position.top = newTop;
                 window.requestAnimationFrame(_ => {

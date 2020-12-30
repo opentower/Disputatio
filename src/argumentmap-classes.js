@@ -221,7 +221,8 @@ export class Cluster extends Gen.GenericNode {
         node.style.position = "relative" 
         node.top = 0 
         node.left = 0
-        node.initDrag(0)
+        node.translationFactor = 0
+        node.initDrag()
         this.nodes[node.uuid] = node //add to node list
         node.cluster = this
         node.dragStart = _ => {
@@ -266,7 +267,8 @@ export class Cluster extends Gen.GenericNode {
         let relOffsetLeft = node.offsetLeft + borderwidth
         let relOffsetTop = node.offsetTop + borderwidth
         node.style.position = "absolute"
-        node.initDrag(1) //resume translation
+        node.translationFactor = 1
+        node.initDrag() //resume translation
         this.map.surface.appendChild(node) //reattach to map
         node.left = relOffsetLeft + this.left
         node.top = relOffsetTop + this.top
