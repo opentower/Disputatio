@@ -7,6 +7,7 @@
         <link rel="preconnect" href="https://fonts.gstatic.com">
         <link href="https://fonts.googleapis.com/css2?family=Vesper+Libre&display=swap" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Raleway&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/normalize-css@2.3.1/normalize.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css" type="text/css" media="screen" title="no title" charset="utf-8">
         <script src="https://cdn.jsdelivr.net/gh/Bernardo-Castilho/dragdroptouch/DragDropTouch.js"></script>
         <script charset="utf-8" src="./dist/main.js"></script>
@@ -118,7 +119,10 @@
                 </p>
                 <disputatio-argumentmap id="example3" style="width:100%; height:250px">
                 </disputatio-argumentmap>
-                <button id="undo">undo</button><button id="redo">redo</button>
+                <div>
+                    <button id="undo">undo</button>
+                    <button id="redo">redo</button>
+                </div>
                 <script charset="utf-8">
                     var ex3 = document.getElementById("example3");
                     var b1 = document.getElementById("undo");
