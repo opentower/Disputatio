@@ -7,7 +7,6 @@
         <link rel="preconnect" href="https://fonts.gstatic.com">
         <link href="https://fonts.googleapis.com/css2?family=Vesper+Libre&display=swap" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Raleway&display=swap" rel="stylesheet">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/normalize-css@2.3.1/normalize.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css" type="text/css" media="screen" title="no title" charset="utf-8">
         <script src="https://cdn.jsdelivr.net/gh/Bernardo-Castilho/dragdroptouch/DragDropTouch.js"></script>
         <script charset="utf-8" src="./dist/main.js"></script>
@@ -60,12 +59,14 @@
             <p>If you want to use Disputatio on your page, just add this tag:</p>
 
 <pre>
-<span class="Function">&lt;</span><span class="Statement">script</span><span class="Function"> </span><span class="Type">src</span><span class="Function">=</span><span class="String">&quot;disputatio&quot;</span><span class="Function">&gt;</span><span class="Identifier">&lt;/</span><span class="Statement">script</span><span class="Identifier">&gt;</span></pre>
+<span class="Function">&lt;</span><span class="Statement">script</span><span class="Function"> </span><span class="Type">src</span><span class="Function">=</span><span class="String">&quot;https://cdn.jsdelivr.net/gh/opentower/Disputatio/dist/main.js&quot;</span><span class="Function">&gt;</span>
+<span class="Identifier">&lt;/</span><span class="Statement">script</span><span class="Identifier">&gt;</span></pre>
 
             <p>You'll then be able to add argument maps to your page as custom elements, with a small piece of HTML like this:</p>
 
 <pre>
-</span><span class="Function">&lt;</span><span class="Statement">disputatio-argumentmap</span><span class="Function"> </span><span class="Type">style</span><span class="Function">=</span><span class="String">&quot;width:100%; height:500px&quot;</span><span class="Function">&gt;</span> <span class="Identifier">&lt;/</span><span class="Statement">disputatio-argumentmap</span><span class="Identifier">&gt;</span></pre>
+</span><span class="Function">&lt;</span><span class="Statement">disputatio-argumentmap</span><span class="Function"> </span><span class="Type">style</span><span class="Function">=</span><span class="String">&quot;width:100%; height:500px&quot;</span><span class="Function">&gt;</span>
+<span class="Identifier">&lt;/</span><span class="Statement">disputatio-argumentmap</span><span class="Identifier">&gt;</span></pre>
             <p>But there's more!</p>
             <h4>
                 Example: Events and Serialization
@@ -218,7 +219,8 @@
         </div>
         <p>An argument map that handles drop events like this can be created with the HTML:</p>
 <pre>
-</span><span class="Function">&lt;</span><span class="Statement">disputatio-scaffolded-map</span><span class="Function"> </span><span class="Type">style</span><span class="Function">=</span><span class="String">&quot;width:100%; height:500px&quot;</span><span class="Function">&gt;</span> <span class="Identifier">&lt;/</span><span class="Statement">disputatio-scaffolded-map</span><span class="Identifier">&gt;</span></pre>
+</span><span class="Function">&lt;</span><span class="Statement">disputatio-scaffolded-map</span><span class="Function"> </span><span class="Type">style</span><span class="Function">=</span><span class="String">&quot;width:100%; height:500px&quot;</span><span class="Function">&gt;</span>
+<span class="Identifier">&lt;/</span><span class="Statement">disputatio-scaffolded-map</span><span class="Identifier">&gt;</span></pre>
         <p>It can accept any drop event carrying data of the type <code>application/disputatio</code>, but Disputatio provides another custom element for giving a quick draggable analysis of an argument, using the notation <code>{statement in text|premise content}</code> to create a draggable premise. Try below:
         </p>
         <disputatio-analysis>
@@ -228,7 +230,8 @@
         </disputatio-analysis>
         This custom element can be created with
 <pre>
-</span><span class="Function">&lt;</span><span class="Statement">disputatio-analysis</span><span class="Function"> </span><span class="Type">style</span><span class="Function">=</span><span class="String">&quot;width:100%; height:500px&quot;</span><span class="Function">&gt;</span> <span class="Identifier">&lt;/</span><span class="Statement">disputatio-analysis</span><span class="Identifier">&gt;</span></pre>
+</span><span class="Function">&lt;</span><span class="Statement">disputatio-analysis</span><span class="Function"> </span><span class="Type">style</span><span class="Function">=</span><span class="String">&quot;width:100%; height:500px&quot;</span><span class="Function">&gt;</span>
+<span class="Identifier">&lt;/</span><span class="Statement">disputatio-analysis</span><span class="Identifier">&gt;</span></pre>
         <p>To make it editable, just add the <code>contentEditable</code> attribute.</p>
         <h4>That's all for now!</h4>
         <p>

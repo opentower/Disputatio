@@ -217,7 +217,6 @@ export class GenericNode extends HTMLElement {
             let clientY = e.touches[0].clientY
             let scrollLeft = this.map.frame.scrollLeft
             let scrollTop = this.map.frame.scrollTop
-            console.log(scrollLeft)
             let maprect = this.map.getBoundingClientRect()
             let thisrect = this.getBoundingClientRect()
             let  offset = { x: 0, y: 0 } 

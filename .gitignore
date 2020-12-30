@@ -95,9 +95,6 @@ public/
 # DynamoDB Local files
 .dynamodb/
 
-# webpack build output
-dist/
-
 # session files
 *.vim
 
