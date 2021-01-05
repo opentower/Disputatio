@@ -205,10 +205,10 @@ export class Cluster extends Gen.GenericNode {
         $(this).on("dragstart", _ => this.style.zIndex = 50)
         $(this).on("touchmove", _ => { if (this.dragged) this.style.zIndex = 50 })
         $(this).on("touchend", _ => { this.style.zIndex = 1 })
-        $(this).dragStop(_ => { 
+        this.dragStop = _ => { 
             this.style.zIndex = 1
             this.repel()
-        })
+        }
     }
 
     connectedCallback() {
