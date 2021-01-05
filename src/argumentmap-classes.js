@@ -203,7 +203,9 @@ export class Cluster extends Gen.GenericNode {
         this.clusterContents = document.createElement("div");
         this.classList.add("clusterNode")
         $(this).on("dragstart", _ => this.style.zIndex = 50)
-        $(this).on("dragstop", _ => { 
+        $(this).on("touchmove", _ => { if (this.dragged) this.style.zIndex = 50 })
+        $(this).on("touchend", _ => { this.style.zIndex = 1 })
+        $(this).dragStop(_ => { 
             this.style.zIndex = 1
             this.repel()
         })
