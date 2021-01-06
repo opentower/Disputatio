@@ -84,7 +84,10 @@ export class Assertion extends Gen.GenericNode {
         if (this.config.implicit) this.implicit = true
         else this.implicit = false
         $(this).on("dragstart",_=> this.style.zIndex = 50)
-        $(this).on("touchmove", _ => { if (this.dragged) this.style.zIndex = 50 })
+        $(this).on("touchmove", _ => { if (this.dragged) {
+            this.style.zIndex = 50 
+            if (this.cluster) this.cluster.style.zIndex = 50
+        }})
         this.isAssertion = true
         this.dragStop = this.dragStopDefault
         this.input = document.createElement("textarea");
@@ -124,6 +127,7 @@ export class Assertion extends Gen.GenericNode {
 
     dragStopDefault() {
         this.style.zIndex = 5
+        if (this.cluster) this.cluster.style.zIndex = 1
         for (var v of this.map.contains(this)) {
             if (v.isClusterNode) { v.addNode(this); return}
         }
@@ -134,9 +138,9 @@ export class Assertion extends Gen.GenericNode {
     
     repel() { 
         super.repel(val => {
-            if (this.cluster && val.cluster) { val.cluster != this.cluster } // do not repel your own siblings
-            else if (this.cluster) { return val != this.cluster } //or your own cluster
-            else { return !val.cluster } // only repel unclustered nodes
+            if (this.cluster && val.cluster) val.cluster != this.cluster // do not repel your own siblings
+            else if (this.cluster) return val != this.cluster //or your own cluster
+            else return !val.cluster // only repel unclustered nodes
         })
     }
 
@@ -237,8 +241,8 @@ export class Cluster extends Gen.GenericNode {
         }
         let checkDetach = e => { 
             node.style.zIndex = 5
+            if (node.cluster) node.cluster.style.zIndex = 1
             if (this.map.contains(node).includes(this)) {
-                console.log("re-added")
                 this.addNode(node) 
             } else {
                 for (var v of this.map.contains(node)) {
